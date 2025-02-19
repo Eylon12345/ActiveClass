@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Game - YouTube Quiz</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container min-vh-100 d-flex flex-column justify-content-center">
+        <!-- Join Phase -->
+        <div id="joinPhase" class="card">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Join Game</h2>
+                <div class="mb-3">
+                    <label for="gameCode" class="form-label">Game Code</label>
+                    <input type="text" class="form-control" id="gameCode" placeholder="Enter 6-digit code">
+                </div>
+                <div class="mb-3">
+                    <label for="nickname" class="form-label">Nickname</label>
+                    <input type="text" class="form-control" id="nickname" placeholder="Enter your nickname">
+                </div>
+                <button id="joinGame" class="btn btn-primary">Join Game</button>
+            </div>
+        </div>
+
+        <!-- Waiting Phase -->
+        <div id="waitingPhase" class="card hidden">
+            <div class="card-body text-center">
+                <h3>Waiting for Game to Start</h3>
+                <p>You've joined as: <span id="playerNickname"></span></p>
+                <p>Game Code: <span id="currentGameCode"></span></p>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Phase -->
+        <div id="gamePhase" class="hidden">
+            <div id="questionContainer" class="card mb-4">
+                <div class="card-body">
+                    <h3 id="questionText" class="card-title mb-4"></h3>
+                    <div id="answerArea" class="d-grid gap-3"></div>
+                    <div id="feedback" class="alert mt-4 hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Phase -->
+        <div id="resultsPhase" class="card hidden">
+            <div class="card-body text-center">
+                <h3>Game Over!</h3>
+                <p class="lead">Your Score: <span id="finalScore">0</span></p>
+                <button id="playAgain" class="btn btn-primary">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/join.js"></script>
+</body>
+</html>
