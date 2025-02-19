@@ -10,7 +10,7 @@ class HostGame {
         this.playerAnswers = new Map();
         this.isQuestionActive = false;
         this.checkInterval = null;
-        this.lastQuestionTime = null;
+        this.lastQuestionTime = 0;
         this.isYouTubeAPIReady = false;
 
         // DOM Elements
@@ -103,7 +103,6 @@ class HostGame {
         this.gameInfo.classList.remove('hidden');
         this.gameCodeDisplay.textContent = this.gameCode;
 
-        // Generate QR code
         try {
             const joinUrl = `${window.location.origin}/join?code=${this.gameCode}`;
             const qrCodeElement = document.getElementById('qrCode');
@@ -165,7 +164,8 @@ class HostGame {
             videoId: this.videoId,
             playerVars: {
                 'playsinline': 1,
-                'enablejsapi': 1
+                'enablejsapi': 1,
+                'controls': 1
             },
             events: {
                 'onStateChange': (event) => this.onPlayerStateChange(event)
@@ -174,28 +174,31 @@ class HostGame {
     }
 
     onPlayerStateChange(event) {
+        // Clear existing interval if any
+        if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+            this.checkInterval = null;
+        }
+
+        // Set up new interval only if video is playing and no question is active
         if (event.data === YT.PlayerState.PLAYING && !this.isQuestionActive) {
-            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 60000); // Changed to 60000ms (1 minute)
-        } else {
-            if (this.checkInterval) {
-                clearInterval(this.checkInterval);
-                this.checkInterval = null;
-            }
+            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 1000);
         }
     }
 
     handleTimeUpdate() {
-        if (this.isQuestionActive) return;
-
-        const currentTime = this.player.getCurrentTime();
-        if (!this.lastQuestionTime) {
-            this.lastQuestionTime = currentTime;
+        if (this.isQuestionActive) {
             return;
         }
 
-        // Check if one minute (60 seconds) has passed since the last question
-        if (currentTime >= this.lastQuestionTime + 60) {
+        const currentTime = Math.floor(this.player.getCurrentTime());
+
+        // Generate question every 60 seconds
+        if (currentTime > this.lastQuestionTime + 60) {
+            console.log('Generating question at time:', currentTime);
             this.generateQuestion(currentTime);
+            this.player.pauseVideo();
+            this.lastQuestionTime = currentTime;
         }
     }
 
@@ -218,11 +221,9 @@ class HostGame {
 
             const data = await response.json();
             if (data.success) {
+                this.isQuestionActive = true;
                 this.currentQuestion = data;
                 this.showQuestion(data);
-                this.player.pauseVideo();
-                this.lastQuestionTime = currentTime;
-                this.isQuestionActive = true;
                 this.answersReceived = 0;
                 this.answersCount.textContent = '0';
                 this.playerAnswers.clear();
@@ -239,6 +240,8 @@ class HostGame {
             }
         } catch (error) {
             console.error('Error generating question:', error);
+            this.isQuestionActive = false;
+            this.player.playVideo();
         }
     }
 
@@ -250,20 +253,21 @@ class HostGame {
         const answers = [
             questionData.correct_answer,
             ...questionData.incorrect_answers
-        ];
+        ].sort(() => Math.random() - 0.5);
 
         answers.forEach(answer => {
             const option = document.createElement('div');
             option.className = 'answer-option';
             option.textContent = answer;
-            if (answer === questionData.correct_answer) {
-                option.classList.add('correct-answer');
-            }
             this.answerArea.appendChild(option);
         });
+
+        this.continueVideo.classList.add('hidden');
     }
 
     handlePlayerAnswer(playerId, nickname, answer) {
+        if (!this.isQuestionActive) return;
+
         this.playerAnswers.set(playerId, answer);
         this.answersReceived++;
         this.answersCount.textContent = this.answersReceived;
