@@ -1,0 +1,192 @@
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 177, in handle_request
+2025-02-19 18:39:10.03
+993f4f84
+User
+respiter = self.wsgi(environ, resp.start_response)
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+2025-02-19 18:39:10.03
+993f4f84
+User
+return self.wsgi_app(environ, start_response)
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+2025-02-19 18:39:10.03
+993f4f84
+User
+return super().__call__(environ, start_response)
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+2025-02-19 18:39:10.03
+993f4f84
+User
+return self.engineio_app.handle_request(environ, start_response)
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+2025-02-19 18:39:10.03
+993f4f84
+User
+return self.eio.handle_request(environ, start_response)
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+2025-02-19 18:39:10.03
+993f4f84
+User
+packets = socket.handle_get_request(
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-19 18:39:10.03
+993f4f84
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-19 18:39:10.03
+993f4f84
+User
+return ws(environ, start_response)
+2025-02-19 18:39:10.03
+993f4f84
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:39:10.03
+993f4f84
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-19 18:39:10.03
+993f4f84
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-19 18:39:10.03
+993f4f84
+User
+RuntimeError: The gevent-websocket server is not configured appropriately. See the Deployment section of the documentation for more information.
+2025-02-19 18:39:34.73
+993f4f84
+User
+ULdQDY2kk5P9M185AAAC: Sending packet PING data None
+2025-02-19 18:39:34.73
+993f4f84
+User
+INFO:engineio.server:ULdQDY2kk5P9M185AAAC: Sending packet PING data None
+2025-02-19 18:39:34.73
+993f4f84
+User
+INFO:root:Creating game for video ID: SzKkBOUvsAY
+2025-02-19 18:39:34.73
+993f4f84
+User
+INFO:root:Attempting to get transcript for video SzKkBOUvsAY
+2025-02-19 18:39:34.73
+993f4f84
+User
+INFO:root:Attempt 1: Direct transcript retrieval
+2025-02-19 18:39:34.74
+993f4f84
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-19 18:39:34.88
+993f4f84
+User
+WARNING:root:Attempt 1 failed: maximum recursion depth exceeded
+2025-02-19 18:39:34.88
+993f4f84
+User
+INFO:root:Trying alternative transcript retrieval method
+2025-02-19 18:39:34.88
+993f4f84
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-19 18:39:34.88
+993f4f84
+User
+WARNING:root:Transcript listing failed for attempt 1
+2025-02-19 18:39:34.88
+993f4f84
+User
+INFO:root:Waiting 1 seconds before retry 2
+2025-02-19 18:39:35.88
+993f4f84
+User
+INFO:root:Attempt 2: Direct transcript retrieval
+2025-02-19 18:39:35.89
+993f4f84
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-19 18:39:35.89
+993f4f84
+User
+WARNING:root:Attempt 2 failed: maximum recursion depth exceeded
+2025-02-19 18:39:35.89
+993f4f84
+User
+INFO:root:Trying alternative transcript retrieval method
+2025-02-19 18:39:35.90
+993f4f84
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-19 18:39:35.90
+993f4f84
+User
+WARNING:root:Transcript listing failed for attempt 2
+2025-02-19 18:39:35.90
+993f4f84
+User
+INFO:root:Waiting 2 seconds before retry 3
+2025-02-19 18:39:37.90
+993f4f84
+User
+INFO:root:Attempt 3: Direct transcript retrieval
+2025-02-19 18:39:37.91
+993f4f84
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-19 18:39:37.91
+993f4f84
+User
+WARNING:root:Attempt 3 failed: maximum r

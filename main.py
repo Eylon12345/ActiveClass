@@ -1,5 +1,5 @@
 import os
-import time  # Add missing time import
+import time
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
@@ -43,7 +43,7 @@ socketio = SocketIO(
 # Initialize the OpenAI client
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# Store active games in memory with proper session handling
+# Store active games in memory
 active_games = {}
 
 class ReflectionClosedQuestion(BaseModel):
@@ -407,12 +407,5 @@ if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
 
-    # Use Flask-SocketIO's built-in server for development; Gunicorn for production
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=port,
-        debug=True,
-        use_reloader=False,
-        log_output=True
-    )
+    # Don't run the server here - let Gunicorn handle it
+    app.run(host='0.0.0.0', port=port, debug=True)
