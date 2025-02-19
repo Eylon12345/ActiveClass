@@ -60,18 +60,59 @@ def extract_video_id(url):
 
 def get_transcript_segment(video_id, current_time):
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        # Try multiple transcript retrieval methods
+        transcript = None
+        error_messages = []
+
+        # Log all attempts for debugging
+        logging.info(f"Attempting to get transcript for video {video_id}")
+
+        # Method 1: Try direct transcript
+        try:
+            logging.info("Attempting direct transcript retrieval")
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            logging.info("Direct transcript retrieval successful")
+        except Exception as e:
+            error_messages.append(f"Direct transcript: {str(e)}")
+            logging.info(f"Direct transcript failed: {str(e)}")
+
+            # Method 2: Try auto-generated transcripts first
+            try:
+                logging.info("Attempting auto-generated transcript retrieval")
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                transcript = transcript_list.find_generated_transcript(['en']).fetch()
+                logging.info("Auto-generated transcript retrieval successful")
+            except Exception as e:
+                error_messages.append(f"Auto-generated transcript: {str(e)}")
+                logging.info(f"Auto-generated transcript failed: {str(e)}")
+
+                # Method 3: Try manual transcripts with language specification
+                try:
+                    logging.info("Attempting manual transcript retrieval with language specification")
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                    transcript = transcript_list.find_manually_created_transcript(['en']).fetch()
+                    logging.info("Manual transcript retrieval successful")
+                except Exception as e:
+                    error_messages.append(f"Manual transcript: {str(e)}")
+                    logging.info(f"Manual transcript failed: {str(e)}")
+
+        if transcript is None:
+            logging.error(f"All transcript retrieval methods failed for video {video_id}. Errors: {'; '.join(error_messages)}")
+            return None
+
         relevant_text = []
         end_time = current_time
         start_time = max(0, end_time - 60)
-        
+
         for entry in transcript:
             if start_time <= entry['start'] <= end_time:
                 relevant_text.append(entry['text'])
-        
-        return ' '.join(relevant_text)
+
+        result = ' '.join(relevant_text)
+        logging.info(f"Successfully retrieved transcript segment for video {video_id} from {start_time}s to {end_time}s")
+        return result
     except Exception as e:
-        logging.error(f"Error getting transcript: {str(e)}")
+        logging.error(f"Unexpected error getting transcript for video {video_id}: {str(e)}")
         return None
 
 @app.route("/")
@@ -91,16 +132,24 @@ def create_game():
     try:
         url = request.json["url"]
         video_id = extract_video_id(url)
-        
+
         if not video_id:
             return jsonify({"success": False, "error": "Invalid YouTube URL"}), 400
-        
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+
+        logging.info(f"Creating game for video ID: {video_id}")
+
+        # Try to get a sample transcript to verify it works
+        test_transcript = get_transcript_segment(video_id, 10)
+        if test_transcript is None:
+            return jsonify({
+                "success": False,
+                "error": "Could not access video subtitles. The video might not have subtitles enabled, or they might be restricted. Try another video or ensure the video has captions available."
+            }), 400
+
         game_code = generate_game_code()
-        
         while game_code in active_games:
             game_code = generate_game_code()
-        
+
         active_games[game_code] = {
             'video_id': video_id,
             'host_id': None,
@@ -112,7 +161,8 @@ def create_game():
                 'difficulty': '6'
             }
         }
-        
+
+        logging.info(f"Successfully created game with code: {game_code}")
         return jsonify({
             "success": True,
             "game_code": game_code,
@@ -122,7 +172,7 @@ def create_game():
         logging.error(f"Error creating game: {str(e)}")
         return jsonify({
             "success": False,
-            "error": "Could not create game. Make sure the video has closed captions available."
+            "error": f"Could not create game. Error: {str(e)}"
         }), 400
 
 @app.route("/api/join_game", methods=["POST"])
