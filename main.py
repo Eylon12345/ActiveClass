@@ -249,5 +249,14 @@ def handle_answer_result(data):
             'is_correct': is_correct
         }, room=game_code)
 
+@socketio.on('broadcast_question')
+def handle_broadcast_question(data):
+    game_code = data['game_code']
+    question_data = data['question']
+
+    if game_code in active_games:
+        active_games[game_code]['current_question'] = question_data
+        emit('new_question', question_data, room=game_code)
+
 if __name__ == "__main__":
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)

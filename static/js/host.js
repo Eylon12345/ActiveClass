@@ -118,7 +118,7 @@ class HostGame {
             });
         } catch (error) {
             console.error('Error generating QR code:', error);
-            document.getElementById('qrCode').innerHTML = 
+            document.getElementById('qrCode').innerHTML =
                 `<p>Join URL: <a href="/join?code=${this.gameCode}">/join?code=${this.gameCode}</a></p>`;
         }
 
@@ -175,7 +175,7 @@ class HostGame {
 
     onPlayerStateChange(event) {
         if (event.data === YT.PlayerState.PLAYING && !this.isQuestionActive) {
-            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 1000);
+            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 60000); // Changed to 60000ms (1 minute)
         } else {
             if (this.checkInterval) {
                 clearInterval(this.checkInterval);
@@ -193,6 +193,7 @@ class HostGame {
             return;
         }
 
+        // Check if one minute (60 seconds) has passed since the last question
         if (currentTime >= this.lastQuestionTime + 60) {
             this.generateQuestion(currentTime);
         }
@@ -226,9 +227,14 @@ class HostGame {
                 this.answersCount.textContent = '0';
                 this.playerAnswers.clear();
 
-                this.socket.emit('update_question', {
+                // Emit the question to all players
+                this.socket.emit('broadcast_question', {
                     game_code: this.gameCode,
-                    question: data
+                    question: {
+                        text: data.reflective_question,
+                        correct_answer: data.correct_answer,
+                        incorrect_answers: data.incorrect_answers
+                    }
                 });
             }
         } catch (error) {
@@ -263,7 +269,7 @@ class HostGame {
         this.answersCount.textContent = this.answersReceived;
 
         const isCorrect = answer === this.currentQuestion.correct_answer;
-        
+
         this.socket.emit('answer_result', {
             game_code: this.gameCode,
             player_id: playerId,

@@ -52,8 +52,25 @@ class PlayerGame {
             this.showGamePhase();
         });
 
+        // Update the new_question handler to show questions to all players
         this.socket.on('new_question', (questionData) => {
-            this.showQuestion(questionData);
+            this.currentQuestion = questionData;
+            this.questionText.textContent = questionData.text;
+            this.answerArea.innerHTML = '';
+            this.feedback.classList.add('hidden');
+
+            const answers = [
+                questionData.correct_answer,
+                ...questionData.incorrect_answers
+            ].sort(() => Math.random() - 0.5);
+
+            answers.forEach(answer => {
+                const option = document.createElement('div');
+                option.className = 'answer-option';
+                option.textContent = answer;
+                option.addEventListener('click', () => this.submitAnswer(answer));
+                this.answerArea.appendChild(option);
+            });
         });
 
         this.socket.on('answer_result', (data) => {
