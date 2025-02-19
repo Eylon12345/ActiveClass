@@ -6,6 +6,7 @@ class PlayerGame {
         this.nickname = null;
         this.score = 0;
         this.currentQuestion = null;
+        this.hasAnswered = false;
 
         // DOM Elements
         this.joinPhase = document.getElementById('joinPhase');
@@ -23,6 +24,7 @@ class PlayerGame {
         this.feedback = document.getElementById('feedback');
         this.finalScore = document.getElementById('finalScore');
         this.playAgainBtn = document.getElementById('playAgain');
+        this.playerScore = document.getElementById('playerScore');
 
         // Check for game code in URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -52,8 +54,8 @@ class PlayerGame {
             this.showGamePhase();
         });
 
-        // Update the new_question handler to show questions to all players
         this.socket.on('new_question', (questionData) => {
+            this.hasAnswered = false;
             this.currentQuestion = questionData;
             this.questionText.textContent = questionData.text;
             this.answerArea.innerHTML = '';
@@ -68,7 +70,11 @@ class PlayerGame {
                 const option = document.createElement('div');
                 option.className = 'answer-option';
                 option.textContent = answer;
-                option.addEventListener('click', () => this.submitAnswer(answer));
+                option.addEventListener('click', () => {
+                    if (!this.hasAnswered) {
+                        this.submitAnswer(answer);
+                    }
+                });
                 this.answerArea.appendChild(option);
             });
         });
@@ -126,29 +132,10 @@ class PlayerGame {
         this.gamePhase.classList.remove('hidden');
     }
 
-    showQuestion(questionData) {
-        this.currentQuestion = questionData;
-        this.questionText.textContent = questionData.reflective_question;
-        this.answerArea.innerHTML = '';
-        this.feedback.classList.add('hidden');
-
-        const answers = [
-            questionData.correct_answer,
-            ...questionData.incorrect_answers
-        ].sort(() => Math.random() - 0.5);
-
-        answers.forEach(answer => {
-            const option = document.createElement('div');
-            option.className = 'answer-option';
-            option.textContent = answer;
-            option.addEventListener('click', () => this.submitAnswer(answer));
-            this.answerArea.appendChild(option);
-        });
-    }
-
     submitAnswer(answer) {
-        if (!this.currentQuestion) return;
+        if (!this.currentQuestion || this.hasAnswered) return;
 
+        this.hasAnswered = true;
         this.socket.emit('submit_answer', {
             game_code: this.gameCode,
             player_id: this.playerId,
@@ -171,6 +158,9 @@ class PlayerGame {
     showAnswerResult(isCorrect) {
         if (isCorrect) {
             this.score += 100;
+            if (this.playerScore) {
+                this.playerScore.textContent = this.score;
+            }
         }
 
         const selectedOption = this.answerArea.querySelector('.answer-option.selected');

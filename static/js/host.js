@@ -11,6 +11,7 @@ class HostGame {
         this.isQuestionActive = false;
         this.checkInterval = null;
         this.lastQuestionTime = 0;
+        this.nextQuestionData = null;
         this.isYouTubeAPIReady = false;
 
         // DOM Elements
@@ -22,6 +23,7 @@ class HostGame {
         this.gameCodeDisplay = document.getElementById('gameCode');
         this.playerCountDisplay = document.getElementById('playerCount');
         this.playerList = document.getElementById('playerList');
+        this.playerScores = document.getElementById('playerScores');
         this.videoUrl = document.getElementById('videoUrl');
         this.createGameBtn = document.getElementById('createGame');
         this.startGameBtn = document.getElementById('startGame');
@@ -127,8 +129,19 @@ class HostGame {
     addPlayer(playerId, nickname) {
         this.players.set(playerId, { nickname, score: 0 });
         this.updatePlayerList();
+        this.updateScoreDisplay();
         this.playerCountDisplay.textContent = this.players.size;
         this.totalPlayers.textContent = this.players.size;
+    }
+
+    updateScoreDisplay() {
+        const scoresList = Array.from(this.players.entries())
+            .sort((a, b) => b[1].score - a[1].score)
+            .map(([id, player]) => `${player.nickname}: ${player.score}`);
+
+        this.playerScores.innerHTML = scoresList
+            .map(score => `<div class="badge bg-secondary me-2">${score}</div>`)
+            .join('');
     }
 
     updatePlayerList() {
@@ -136,7 +149,7 @@ class HostGame {
         for (const [id, player] of this.players) {
             const playerElement = document.createElement('div');
             playerElement.className = 'player-item';
-            playerElement.textContent = player.nickname;
+            playerElement.textContent = `${player.nickname} (Score: ${player.score})`;
             this.playerList.appendChild(playerElement);
         }
     }
@@ -186,25 +199,29 @@ class HostGame {
         }
     }
 
-    handleTimeUpdate() {
+    async handleTimeUpdate() {
         if (this.isQuestionActive) {
             return;
         }
 
         const currentTime = Math.floor(this.player.getCurrentTime());
 
-        // Generate question every 60 seconds
-        if (currentTime > this.lastQuestionTime + 60) {
-            console.log('Generating question at time:', currentTime);
-            this.generateQuestion(currentTime);
+        // Pre-generate question 5 seconds before showing it
+        if (currentTime > this.lastQuestionTime + 55 && !this.nextQuestionData) {
+            this.nextQuestionData = await this.fetchQuestion(currentTime + 5);
+        }
+
+        // Show question every 60 seconds
+        if (currentTime > this.lastQuestionTime + 60 && this.nextQuestionData) {
+            console.log('Showing question at time:', currentTime);
+            this.showQuestion(this.nextQuestionData);
             this.player.pauseVideo();
             this.lastQuestionTime = currentTime;
+            this.nextQuestionData = null;
         }
     }
 
-    async generateQuestion(currentTime) {
-        if (this.isQuestionActive) return;
-
+    async fetchQuestion(currentTime) {
         try {
             const response = await fetch('/api/generate_question', {
                 method: 'POST',
@@ -221,34 +238,23 @@ class HostGame {
 
             const data = await response.json();
             if (data.success) {
-                this.isQuestionActive = true;
-                this.currentQuestion = data;
-                this.showQuestion(data);
-                this.answersReceived = 0;
-                this.answersCount.textContent = '0';
-                this.playerAnswers.clear();
-
-                // Emit the question to all players
-                this.socket.emit('broadcast_question', {
-                    game_code: this.gameCode,
-                    question: {
-                        text: data.reflective_question,
-                        correct_answer: data.correct_answer,
-                        incorrect_answers: data.incorrect_answers
-                    }
-                });
+                return data;
             }
         } catch (error) {
             console.error('Error generating question:', error);
-            this.isQuestionActive = false;
-            this.player.playVideo();
+            return null;
         }
     }
 
     showQuestion(questionData) {
+        this.isQuestionActive = true;
+        this.currentQuestion = questionData;
         this.questionContainer.classList.remove('hidden');
         this.questionText.textContent = questionData.reflective_question;
         this.answerArea.innerHTML = '';
+        this.answersReceived = 0;
+        this.answersCount.textContent = '0';
+        this.playerAnswers.clear();
 
         const answers = [
             questionData.correct_answer,
@@ -263,6 +269,16 @@ class HostGame {
         });
 
         this.continueVideo.classList.add('hidden');
+
+        // Emit the question to all players
+        this.socket.emit('broadcast_question', {
+            game_code: this.gameCode,
+            question: {
+                text: questionData.reflective_question,
+                correct_answer: questionData.correct_answer,
+                incorrect_answers: questionData.incorrect_answers
+            }
+        });
     }
 
     handlePlayerAnswer(playerId, nickname, answer) {
@@ -272,15 +288,25 @@ class HostGame {
         this.answersReceived++;
         this.answersCount.textContent = this.answersReceived;
 
-        const isCorrect = answer === this.currentQuestion.correct_answer;
-
-        this.socket.emit('answer_result', {
-            game_code: this.gameCode,
-            player_id: playerId,
-            is_correct: isCorrect
-        });
-
         if (this.answersReceived === this.players.size) {
+            // Process all answers at once
+            for (const [pid, ans] of this.playerAnswers) {
+                const isCorrect = ans === this.currentQuestion.correct_answer;
+                if (isCorrect) {
+                    const player = this.players.get(pid);
+                    player.score += 100;
+                    this.players.set(pid, player);
+                }
+
+                // Now send results to all players
+                this.socket.emit('answer_result', {
+                    game_code: this.gameCode,
+                    player_id: pid,
+                    is_correct: isCorrect
+                });
+            }
+
+            this.updateScoreDisplay();
             this.continueVideo.classList.remove('hidden');
         }
     }
