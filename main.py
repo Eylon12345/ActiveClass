@@ -27,7 +27,7 @@ CORS(app)
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Configure SocketIO with proper async mode
+# Configure SocketIO with proper async mode and manage_session=False
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
@@ -37,7 +37,8 @@ socketio = SocketIO(
     logger=True,
     engineio_logger=True,
     always_connect=True,
-    async_handlers=True
+    async_handlers=True,
+    manage_session=False
 )
 
 # Initialize the OpenAI client
@@ -342,8 +343,9 @@ def handle_connect():
     logging.info('Client connected')
 
 @socketio.on('disconnect')
-def handle_disconnect():
-    logging.info('Client disconnected')
+def handle_disconnect(sid):
+    """Handle client disconnection."""
+    logging.info(f'Client disconnected: {sid}')
 
 @socketio.on('join_game_room')
 def handle_join_room(data):
@@ -406,6 +408,4 @@ def handle_broadcast_question(data):
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
-
-    # Don't run the server here - let Gunicorn handle it
     app.run(host='0.0.0.0', port=port, debug=True)
