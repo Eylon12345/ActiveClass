@@ -202,6 +202,55 @@ def generate_question():
         logging.error(f"Error generating question: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/api/check_answer", methods=["POST"])
+def check_answer():
+    try:
+        content_segment = request.json.get("content_segment")
+        question = request.json.get("question")
+        answers = request.json.get("answers", [])
+
+        results = []
+        for answer_data in answers:
+            completion = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert in validating student answers.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Context: {content_segment}\nQuestion: {question}\nPlease check if this answer is somewhat correct: {answer_data['answer']}. Be lenient - even close or short answers are fine. If incorrect, please explain why.",
+                    },
+                ],
+                functions=[
+                    {
+                        "name": "generate_reflection_prompt",
+                        "parameters": RefectionSinglePromptResponse.model_json_schema(),
+                    }
+                ],
+                function_call={"name": "generate_reflection_prompt"},
+            )
+
+            reflection_prompt = RefectionSinglePromptResponse.model_validate_json(
+                completion.choices[0].message.function_call.arguments
+            )
+
+            results.append({
+                "player_id": answer_data["player_id"],
+                "answer": answer_data["answer"],
+                "is_correct": reflection_prompt.reflection_prompt.is_correct,
+                "explanation": reflection_prompt.reflection_prompt.explanation,
+            })
+
+        return jsonify({
+            "success": True,
+            "results": results
+        })
+    except Exception as e:
+        logging.error(f"Error checking answers: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # Socket.IO event handlers
 @socketio.on('connect')
 def handle_connect():

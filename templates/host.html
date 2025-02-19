@@ -58,23 +58,25 @@
         <!-- Game Phase -->
         <div id="gamePhase" class="hidden">
             <!-- Video Container -->
-            <div class="mb-4">
-                <div id="player" class="ratio ratio-16x9"></div>
+            <div class="video-container mb-4">
+                <div id="player"></div>
             </div>
 
             <!-- Question Container -->
             <div id="questionContainer" class="card mb-4 hidden">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
+                    <div class="row">
+                        <div class="col-lg-8">
                             <h4 id="questionText" class="card-title mb-4"></h4>
-                            <div id="answerArea" class="d-grid gap-3"></div>
+                            <div id="answerArea" class="d-grid gap-3 mb-4"></div>
+                            <div id="explanationArea" class="alert alert-info hidden"></div>
                         </div>
-                        <div class="col-auto">
-                            <div class="text-end">
+                        <div class="col-lg-4">
+                            <div class="text-end mb-3">
                                 <p class="mb-2">Answers received: <span id="answersCount">0</span>/<span id="totalPlayers">0</span></p>
                                 <button id="continueVideo" class="btn btn-primary hidden">Continue Video</button>
                             </div>
+                            <div id="playerAnswers" class="list-group"></div>
                         </div>
                     </div>
                 </div>
