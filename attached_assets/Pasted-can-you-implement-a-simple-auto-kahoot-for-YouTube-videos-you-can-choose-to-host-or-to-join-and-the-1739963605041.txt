@@ -1,0 +1,884 @@
+can you implement a simple auto kahoot for YouTube videos? you can choose to host or to join and then answer the ai generated questions based on the video transcript:
+
+import os
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+from openai import OpenAI
+import logging
+from pydantic import BaseModel
+from typing import List
+from dotenv import load_dotenv
+from youtube_transcript_api import YouTubeTranscriptApi
+import re
+import random
+import string
+from flask_socketio import SocketIO, emit, join_room, leave_room
+
+load_dotenv()
+
+app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+logging.basicConfig(level=logging.DEBUG)
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Store active games in memory (in production, use a database)
+active_games = {}
+
+class ReflectionClosedQuestion(BaseModel):
+    question: str
+    correct_answer: str
+    incorrect_answers: List[str]
+
+class ReflectionClosedPromptResponse(BaseModel):
+    reflection_prompt: ReflectionClosedQuestion
+
+class ReflectionSingleQuestion(BaseModel):
+    is_correct: bool
+    explanation: str
+
+class RefectionSinglePromptResponse(BaseModel):
+    reflection_prompt: ReflectionSingleQuestion
+
+def generate_game_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def extract_video_id(url):
+    # Extract video ID from YouTube URL
+    patterns = [
+        r'(?:youtube\.com\/watch\?v=|youtu.be\/)([^&\n?]*)',
+        r'youtube.com\/embed\/([^&\n?]*)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+def get_transcript_segment(video_id, current_time):
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        
+        # Find relevant transcript parts before the current time
+        relevant_text = []
+        end_time = current_time  # Current time is the end of our segment
+        start_time = max(0, end_time - 60)  # Get the last 60 seconds
+        
+        for entry in transcript:
+            if start_time <= entry['start'] <= end_time:
+                relevant_text.append(entry['text'])
+        
+        return ' '.join(relevant_text)
+    except Exception as e:
+        logging.error(f"Error getting transcript: {str(e)}")
+        return None
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/host")
+def host():
+    return render_template("host.html")
+
+@app.route("/join")
+def join():
+    return render_template("join.html")
+
+@app.route("/api/create_game", methods=["POST"])
+def create_game():
+    try:
+        url = request.json["url"]
+        video_id = extract_video_id(url)
+        
+        if not video_id:
+            return jsonify({"success": False, "error": "Invalid YouTube URL"}), 400
+            
+        # Try to get transcript to verify video is available
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        
+        # Generate unique game code
+        game_code = generate_game_code()
+        while game_code in active_games:
+            game_code = generate_game_code()
+        
+        # Create new game session
+        active_games[game_code] = {
+            'video_id': video_id,
+            'host_id': None,
+            'players': {},
+            'current_question': None,
+            'phase': 'lobby',
+            'settings': {
+                'question_type': 'closed',
+                'difficulty': '6'
+            }
+        }
+        
+        return jsonify({
+            "success": True,
+            "game_code": game_code,
+            "video_id": video_id
+        })
+    except Exception as e:
+        logging.error(f"Error creating game: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": "Could not create game. Make sure the video has closed captions available."
+        }), 400
+
+@app.route("/api/join_game", methods=["POST"])
+def join_game():
+    try:
+        game_code = request.json["game_code"]
+        nickname = request.json["nickname"]
+        
+        if game_code not in active_games:
+            return jsonify({"success": False, "error": "Invalid game code"}), 400
+            
+        player_id = str(len(active_games[game_code]['players']) + 1)
+        active_games[game_code]['players'][player_id] = {
+            'nickname': nickname,
+            'score': 0
+        }
+        
+        # Notify host about new player
+        socketio.emit('player_joined', {
+            'nickname': nickname,
+            'player_id': player_id
+        }, room=game_code)
+        
+        return jsonify({
+            "success": True,
+            "player_id": player_id,
+            "game_code": game_code
+        })
+    except Exception as e:
+        logging.error(f"Error joining game: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@socketio.on('connect')
+def handle_connect():
+    logging.info('Client connected')
+
+@socketio.on('join_game_room')
+def handle_join_room(data):
+    game_code = data['game_code']
+    if game_code in active_games:
+        join_room(game_code)
+        emit('room_joined', {'game_code': game_code})
+
+@socketio.on('start_game')
+def handle_start_game(data):
+    game_code = data['game_code']
+    if game_code in active_games:
+        active_games[game_code]['phase'] = 'playing'
+        emit('game_started', {}, room=game_code)
+
+@socketio.on('update_question')
+def handle_update_question(data):
+    game_code = data['game_code']
+    question_data = data['question']
+    if game_code in active_games:
+        active_games[game_code]['current_question'] = question_data
+        emit('new_question', question_data, room=game_code)
+
+@socketio.on('submit_answer')
+def handle_submit_answer(data):
+    game_code = data['game_code']
+    player_id = data['player_id']
+    answer = data['answer']
+    
+    if game_code in active_games and player_id in active_games[game_code]['players']:
+        # Emit answer submission to host
+        emit('answer_submitted', {
+            'player_id': player_id,
+            'nickname': active_games[game_code]['players'][player_id]['nickname'],
+            'answer': answer
+        }, room=game_code)
+
+@socketio.on('answer_result')
+def handle_answer_result(data):
+    game_code = data['game_code']
+    player_id = data['player_id']
+    is_correct = data['is_correct']
+    
+    if game_code in active_games and player_id in active_games[game_code]['players']:
+        # Update player's score if correct
+        if is_correct:
+            active_games[game_code]['players'][player_id]['score'] += 100
+        
+        # Emit result back to all clients in the room
+        emit('answer_result', {
+            'player_id': player_id,
+            'is_correct': is_correct
+        }, room=game_code)
+
+@app.route("/api/get_video_info", methods=["POST"])
+def get_video_info():
+    try:
+        url = request.json["url"]
+        video_id = extract_video_id(url)
+        
+        if not video_id:
+            return jsonify({"success": False, "error": "Invalid YouTube URL"}), 400
+            
+        # Try to get transcript to verify video is available
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        
+        return jsonify({
+            "success": True,
+            "video_id": video_id
+        })
+    except Exception as e:
+        logging.error(f"Error getting video info: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": "Could not get video transcript. Make sure the video has closed captions available."
+        }), 400
+
+@app.route("/api/generate_question", methods=["POST"])
+def generate_question():
+    try:
+        video_id = request.json["video_id"]
+        current_time = request.json["current_time"]
+        question_type = request.json["question_type"]
+        grade_level = request.json["difficulty"]
+
+        # Get transcript segment for context
+        content_segment = get_transcript_segment(video_id, current_time)
+        if not content_segment:
+            return jsonify({"success": False, "error": "Could not get video transcript"}), 400
+
+        grade_suffix = "th"
+        if grade_level == "1":
+            grade_suffix = "st"
+        elif grade_level == "2":
+            grade_suffix = "nd"
+        elif grade_level == "3":
+            grade_suffix = "rd"
+
+        grade_description = f"{grade_level}{grade_suffix} grade"
+
+        if question_type == "single_qa":
+            chat_completion = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""You are an expert in creating educational questions appropriate for {grade_description} students.
+                        Ensure the language, complexity, and concepts are suitable for this grade level.
+                        Focus on clear, age-appropriate questions that encourage critical thinking while remaining accessible.""",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Generate a question based on this content that would be appropriate for a {grade_description} student: {content_segment}.",
+                    },
+                ],
+                max_tokens=100,
+            )
+            reflective_question = chat_completion.choices[0].message.content
+            
+            return jsonify({
+                "success": True,
+                "reflective_question": reflective_question,
+                "content_segment": content_segment  # Add content segment to response
+            })
+            
+        elif question_type == "closed":
+            completion = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""You are an expert in creating multiple-choice questions appropriate for {grade_description} students.
+                        
+Important guidelines for generating answers:
+1. All answer options (correct and incorrect) should be roughly the same length
+2. Incorrect answers should be plausible but clearly wrong when the content is understood
+3. Use vocabulary and concepts appropriate for {grade_description} students
+4. Keep the question complexity suitable for {grade_description} level"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Generate a multiple-choice question based on this content that would be appropriate for a {grade_description} student: {content_segment}. Provide one correct answer and three incorrect answers.",
+                    }
+                ],
+                functions=[
+                    {
+                        "name": "generate_reflection_prompt",
+                        "parameters": ReflectionClosedPromptResponse.schema(),
+                    }
+                ],
+                function_call={"name": "generate_reflection_prompt"},
+                max_tokens=200,
+                temperature=0.7
+            )
+
+            reflection_prompt = ReflectionClosedPromptResponse.model_validate_json(
+                completion.choices[0].message.function_call.arguments
+            )
+            
+            return jsonify({
+                "success": True,
+                "reflective_question": reflection_prompt.reflection_prompt.question,
+                "correct_answer": reflection_prompt.reflection_prompt.correct_answer,
+                "incorrect_answers": reflection_prompt.reflection_prompt.incorrect_answers,
+                "content_segment": content_segment  # Add content segment to response
+            })
+
+    except Exception as e:
+        logging.error(f"Error generating question: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/check_answer", methods=["POST"])
+def check_answer():
+    try:
+        content_segment = request.json["content_segment"]
+        question = request.json["question"]
+        answer = request.json["answer"]
+
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert in validating student answers.",
+                },
+                {
+                    "role": "user",
+                    "content": f"Context: {content_segment}\nQuestion: {question}\nPlease check if this answer is somewhat correct: {answer}. Be lenient - even close or short answers are fine. If incorrect, please explain why.",
+                },
+            ],
+            functions=[
+                {
+                    "name": "generate_reflection_prompt",
+                    "parameters": RefectionSinglePromptResponse.model_json_schema(),
+                }
+            ],
+            function_call={"name": "generate_reflection_prompt"},
+        )
+
+        reflection_prompt = RefectionSinglePromptResponse.model_validate_json(
+            completion.choices[0].message.function_call.arguments
+        )
+        
+        return jsonify({
+            "success": True,
+            "is_correct": reflection_prompt.reflection_prompt.is_correct,
+            "explanation": reflection_prompt.reflection_prompt.explanation,
+        })
+
+    except Exception as e:
+        logging.error(f"Error checking answer: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+if __name__ == "__main__":
+    socketio.run(app, debug=True, host="localhost", port=5001) 
+
+host.js:
+
+class HostGame {
+    constructor() {
+        this.socket = io();
+        this.player = null;
+        this.gameCode = null;
+        this.videoId = null;
+        this.players = new Map();
+        this.currentQuestion = null;
+        this.answersReceived = 0;
+        this.playerAnswers = new Map(); // Store player answers
+        this.isQuestionActive = false;
+        this.checkInterval = null;
+        this.lastQuestionTime = null;
+        this.isYouTubeAPIReady = false;
+
+        // DOM Elements
+        this.setupPhase = document.getElementById('setupPhase');
+        this.lobbyPhase = document.getElementById('lobbyPhase');
+        this.gamePhase = document.getElementById('gamePhase');
+        this.resultsPhase = document.getElementById('resultsPhase');
+        this.gameInfo = document.getElementById('gameInfo');
+        this.gameCodeDisplay = document.getElementById('gameCode');
+        this.playerCountDisplay = document.getElementById('playerCount');
+        this.playerList = document.getElementById('playerList');
+        this.videoUrl = document.getElementById('videoUrl');
+        this.createGameBtn = document.getElementById('createGame');
+        this.startGameBtn = document.getElementById('startGame');
+        this.questionContainer = document.getElementById('questionContainer');
+        this.questionText = document.getElementById('questionText');
+        this.answerArea = document.getElementById('answerArea');
+        this.answersCount = document.getElementById('answersCount');
+        this.totalPlayers = document.getElementById('totalPlayers');
+        this.continueVideo = document.getElementById('continueVideo');
+        this.finalScores = document.getElementById('finalScores');
+        this.newGameBtn = document.getElementById('newGame');
+
+        this.setupEventListeners();
+        this.setupSocketListeners();
+        this.initYouTubeAPI();
+    }
+
+    initYouTubeAPI() {
+        // Create a global callback for when the YouTube IFrame API is ready
+        window.onYouTubeIframeAPIReady = () => {
+            this.isYouTubeAPIReady = true;
+            console.log('YouTube API Ready');
+        };
+    }
+
+    setupEventListeners() {
+        this.createGameBtn.addEventListener('click', () => this.createGame());
+        this.startGameBtn.addEventListener('click', () => this.startGame());
+        this.continueVideo.addEventListener('click', () => this.resumeVideo());
+        this.newGameBtn.addEventListener('click', () => window.location.reload());
+    }
+
+    setupSocketListeners() {
+        this.socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        this.socket.on('player_joined', (data) => {
+            this.addPlayer(data.player_id, data.nickname);
+        });
+
+        this.socket.on('answer_submitted', (data) => {
+            this.handlePlayerAnswer(data.player_id, data.nickname, data.answer);
+        });
+    }
+
+    async createGame() {
+        const url = this.videoUrl.value.trim();
+        if (!url) {
+            alert('Please enter a YouTube video URL');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/create_game', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                this.gameCode = data.game_code;
+                this.videoId = data.video_id;
+                this.showLobby();
+            } else {
+                alert(data.error || 'Error creating game');
+            }
+        } catch (error) {
+            console.error('Error creating game:', error);
+            alert('Error creating game. Please try again.');
+        }
+    }
+
+    showLobby() {
+        this.setupPhase.classList.add('hidden');
+        this.lobbyPhase.classList.remove('hidden');
+        this.gameInfo.classList.remove('hidden');
+        this.gameCodeDisplay.textContent = this.gameCode;
+
+        // Generate QR code with error handling
+        try {
+            const joinUrl = `${window.location.origin}/join?code=${this.gameCode}`;
+            const qrCodeElement = document.getElementById('qrCode');
+
+            // Clear any existing QR code
+            qrCodeElement.innerHTML = '';
+
+            // Create new QR code with error correction
+            new QRCode(qrCodeElement, {
+                text: joinUrl,
+                width: 128,
+                height: 128,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            console.log('QR Code generated successfully for URL:', joinUrl);
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            const qrCodeElement = document.getElementById('qrCode');
+            qrCodeElement.innerHTML = `
+                <p>Join URL: <a href="/join?code=${this.gameCode}" target="_blank">/join?code=${this.gameCode}</a></p>
+            `;
+        }
+
+        this.socket.emit('join_game_room', { game_code: this.gameCode });
+    }
+
+    addPlayer(playerId, nickname) {
+        this.players.set(playerId, { nickname, score: 0 });
+        this.updatePlayerList();
+        this.playerCountDisplay.textContent = this.players.size;
+        this.totalPlayers.textContent = this.players.size;
+    }
+
+    updatePlayerList() {
+        this.playerList.innerHTML = '';
+        for (const [id, player] of this.players) {
+            const playerElement = document.createElement('div');
+            playerElement.className = 'player-item';
+            playerElement.textContent = player.nickname;
+            this.playerList.appendChild(playerElement);
+        }
+    }
+
+    startGame() {
+        if (this.players.size === 0) {
+            alert('Wait for players to join before starting the game');
+            return;
+        }
+
+        this.socket.emit('start_game', { game_code: this.gameCode });
+        this.showGamePhase();
+    }
+
+    showGamePhase() {
+        this.lobbyPhase.classList.add('hidden');
+        this.gamePhase.classList.remove('hidden');
+        this.initYouTubePlayer();
+    }
+
+    initYouTubePlayer() {
+        this.player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            videoId: this.videoId,
+            playerVars: {
+                'playsinline': 1,
+                'enablejsapi': 1
+            },
+            events: {
+                'onStateChange': (event) => this.onPlayerStateChange(event)
+            }
+        });
+    }
+
+    onPlayerStateChange(event) {
+        // YT.PlayerState.PLAYING = 1
+        if (event.data === 1 && !this.isQuestionActive) {
+            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 1000);
+        } else {
+            if (this.checkInterval) {
+                clearInterval(this.checkInterval);
+                this.checkInterval = null;
+            }
+        }
+    }
+
+    handleTimeUpdate() {
+        if (this.isQuestionActive) return;
+
+        const currentTime = this.player.getCurrentTime();
+
+        if (this.lastQuestionTime === null) {
+            this.lastQuestionTime = currentTime;
+            return;
+        }
+
+        if (currentTime >= this.lastQuestionTime + 60) {
+            this.generateQuestion(currentTime);
+        }
+    }
+
+    async generateQuestion(currentTime) {
+        if (this.isQuestionActive) return;
+
+        try {
+            const response = await fetch('/api/generate_question', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    video_id: this.videoId,
+                    current_time: currentTime,
+                    question_type: 'closed',
+                    difficulty: '6'
+                }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                this.currentQuestion = data;
+                this.showQuestion(data);
+                this.player.pauseVideo();
+                this.lastQuestionTime = currentTime;
+                this.isQuestionActive = true;
+                this.answersReceived = 0;
+                this.answersCount.textContent = '0';
+
+                // Send question to all players
+                this.socket.emit('update_question', {
+                    game_code: this.gameCode,
+                    question: data
+                });
+            }
+        } catch (error) {
+            console.error('Error generating question:', error);
+        }
+    }
+
+    showQuestion(questionData) {
+        this.questionContainer.classList.remove('hidden');
+        this.questionText.textContent = questionData.reflective_question;
+        this.answerArea.innerHTML = '';
+
+        // Show answer options for host
+        const answers = [
+            questionData.correct_answer,
+            ...questionData.incorrect_answers
+        ];
+
+        answers.forEach((answer, index) => {
+            const option = document.createElement('div');
+            option.className = 'answer-option';
+            option.textContent = answer;
+            if (answer === questionData.correct_answer) {
+                option.classList.add('correct-answer');
+            }
+            this.answerArea.appendChild(option);
+        });
+    }
+
+    async handlePlayerAnswer(playerId, nickname, answer) {
+        // Store the player's answer
+        this.playerAnswers.set(playerId, answer);
+        this.answersReceived++;
+        this.answersCount.textContent = this.answersReceived;
+
+        // Check if this answer is correct
+        const isCorrect = answer === this.currentQuestion.correct_answer;
+
+        // Send result back to the specific player
+        this.socket.emit('answer_result', {
+            game_code: this.gameCode,
+            player_id: playerId,
+            is_correct: isCorrect
+        });
+
+        // If all players have answered, show the continue button
+        if (this.answersReceived === this.players.size) {
+            this.continueVideo.classList.remove('hidden');
+
+            // Show answer statistics
+            const correctAnswers = Array.from(this.playerAnswers.values())
+                .filter(ans => ans === this.currentQuestion.correct_answer).length;
+
+            // You could add UI elements to show these statistics
+            console.log(`${correctAnswers} out of ${this.players.size} players answered correctly`);
+        }
+    }
+
+    resumeVideo() {
+        this.questionContainer.classList.add('hidden');
+        this.isQuestionActive = false;
+        this.playerAnswers.clear(); // Clear stored answers
+        this.player.playVideo();
+    }
+}
+
+// Initialize the game when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new HostGame();
+}); 
+
+join.js:
+class PlayerGame {
+    constructor() {
+        this.socket = io();
+        this.gameCode = null;
+        this.playerId = null;
+        this.nickname = null;
+        this.score = 0;
+        this.currentQuestion = null;
+
+        // DOM Elements
+        this.joinPhase = document.getElementById('joinPhase');
+        this.waitingPhase = document.getElementById('waitingPhase');
+        this.gamePhase = document.getElementById('gamePhase');
+        this.resultsPhase = document.getElementById('resultsPhase');
+        this.gameCodeInput = document.getElementById('gameCode');
+        this.nicknameInput = document.getElementById('nickname');
+        this.joinGameBtn = document.getElementById('joinGame');
+        this.playerNickname = document.getElementById('playerNickname');
+        this.currentGameCode = document.getElementById('currentGameCode');
+        this.questionContainer = document.getElementById('questionContainer');
+        this.questionText = document.getElementById('questionText');
+        this.answerArea = document.getElementById('answerArea');
+        this.feedback = document.getElementById('feedback');
+        this.finalScore = document.getElementById('finalScore');
+        this.playAgainBtn = document.getElementById('playAgain');
+
+        // Check for game code in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('code')) {
+            this.gameCodeInput.value = urlParams.get('code');
+        }
+
+        this.setupEventListeners();
+        this.setupSocketListeners();
+    }
+
+    setupEventListeners() {
+        this.joinGameBtn.addEventListener('click', () => this.joinGame());
+        this.playAgainBtn.addEventListener('click', () => window.location.reload());
+
+        // Auto-capitalize game code input
+        this.gameCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
+
+    setupSocketListeners() {
+        this.socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        this.socket.on('game_started', () => {
+            this.showGamePhase();
+        });
+
+        this.socket.on('new_question', (questionData) => {
+            this.showQuestion(questionData);
+        });
+
+        this.socket.on('answer_result', (data) => {
+            if (data.player_id === this.playerId) {
+                this.showAnswerResult(data.is_correct);
+            }
+        });
+    }
+
+    async joinGame() {
+        const gameCode = this.gameCodeInput.value.trim().toUpperCase();
+        const nickname = this.nicknameInput.value.trim();
+
+        if (!gameCode || !nickname) {
+            alert('Please enter both game code and nickname');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/join_game', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ game_code: gameCode, nickname }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                this.gameCode = data.game_code;
+                this.playerId = data.player_id;
+                this.nickname = nickname;
+                this.showWaitingPhase();
+                this.socket.emit('join_game_room', { game_code: this.gameCode });
+            } else {
+                alert(data.error || 'Error joining game');
+            }
+        } catch (error) {
+            console.error('Error joining game:', error);
+            alert('Error joining game. Please try again.');
+        }
+    }
+
+    showWaitingPhase() {
+        this.joinPhase.classList.add('hidden');
+        this.waitingPhase.classList.remove('hidden');
+        this.playerNickname.textContent = this.nickname;
+        this.currentGameCode.textContent = this.gameCode;
+    }
+
+    showGamePhase() {
+        this.waitingPhase.classList.add('hidden');
+        this.gamePhase.classList.remove('hidden');
+    }
+
+    showQuestion(questionData) {
+        this.currentQuestion = questionData;
+        this.questionText.textContent = questionData.reflective_question;
+        this.answerArea.innerHTML = '';
+        this.feedback.classList.add('hidden');
+
+        const answers = [
+            questionData.correct_answer,
+            ...questionData.incorrect_answers
+        ].sort(() => Math.random() - 0.5);
+
+        answers.forEach(answer => {
+            const option = document.createElement('div');
+            option.className = 'answer-option';
+            option.textContent = answer;
+            option.addEventListener('click', () => this.submitAnswer(answer));
+            this.answerArea.appendChild(option);
+        });
+    }
+
+    async submitAnswer(answer) {
+        if (!this.currentQuestion) return;
+
+        // Notify host about answer submission
+        this.socket.emit('submit_answer', {
+            game_code: this.gameCode,
+            player_id: this.playerId,
+            answer: answer
+        });
+
+        // Disable all answer options and show waiting message
+        const options = this.answerArea.querySelectorAll('.answer-option');
+        options.forEach(option => {
+            option.style.pointerEvents = 'none';
+            if (option.textContent === answer) {
+                option.classList.add('selected');
+            }
+        });
+
+        // Show waiting message
+        this.feedback.textContent = 'Waiting for other players...';
+        this.feedback.className = 'feedback';
+        this.feedback.classList.remove('hidden');
+    }
+
+    showAnswerResult(isCorrect) {
+        if (isCorrect) {
+            this.score += 100;
+        }
+
+        // Update the selected answer's appearance
+        const selectedOption = this.answerArea.querySelector('.answer-option.selected');
+        if (selectedOption) {
+            selectedOption.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+
+        // Show simple feedback
+        this.feedback.textContent = isCorrect ? 'Correct!' : 'Incorrect!';
+        this.feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+        this.feedback.classList.remove('hidden');
+    }
+
+    showResults() {
+        this.gamePhase.classList.add('hidden');
+        this.resultsPhase.classList.remove('hidden');
+        this.finalScore.textContent = this.score;
+    }
+}
+
+// Initialize the game when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new PlayerGame();
+}); 
