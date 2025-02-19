@@ -11,6 +11,7 @@ import re
 import random
 import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
+import time # Added this line
 
 load_dotenv()
 
@@ -60,44 +61,54 @@ def extract_video_id(url):
 
 def get_transcript_segment(video_id, current_time):
     try:
-        # Try multiple transcript retrieval methods
         transcript = None
         error_messages = []
 
-        # Log all attempts for debugging
         logging.info(f"Attempting to get transcript for video {video_id}")
 
-        # Method 1: Try direct transcript
-        try:
-            logging.info("Attempting direct transcript retrieval")
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            logging.info("Direct transcript retrieval successful")
-        except Exception as e:
-            error_messages.append(f"Direct transcript: {str(e)}")
-            logging.info(f"Direct transcript failed: {str(e)}")
-
-            # Method 2: Try auto-generated transcripts first
+        # Try multiple methods with retries
+        for attempt in range(3):
             try:
-                logging.info("Attempting auto-generated transcript retrieval")
-                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                transcript = transcript_list.find_generated_transcript(['en']).fetch()
-                logging.info("Auto-generated transcript retrieval successful")
-            except Exception as e:
-                error_messages.append(f"Auto-generated transcript: {str(e)}")
-                logging.info(f"Auto-generated transcript failed: {str(e)}")
+                if attempt > 0:
+                    time.sleep(1)  # Add delay between retries
 
-                # Method 3: Try manual transcripts with language specification
-                try:
-                    logging.info("Attempting manual transcript retrieval with language specification")
-                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                    transcript = transcript_list.find_manually_created_transcript(['en']).fetch()
-                    logging.info("Manual transcript retrieval successful")
-                except Exception as e:
-                    error_messages.append(f"Manual transcript: {str(e)}")
-                    logging.info(f"Manual transcript failed: {str(e)}")
+                logging.info(f"Attempt {attempt + 1}: Direct transcript retrieval")
+                transcript = YouTubeTranscriptApi.get_transcript(
+                    video_id,
+                    languages=['en'],
+                    proxies=None
+                )
+                logging.info("Direct transcript retrieval successful")
+                break
+            except Exception as e:
+                error_msg = f"Attempt {attempt + 1} failed: {str(e)}"
+                error_messages.append(error_msg)
+                logging.warning(error_msg)
+
+                if attempt == 0:
+                    try:
+                        logging.info("Trying auto-generated transcript")
+                        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                        transcript = transcript_list.find_generated_transcript(['en']).fetch()
+                        logging.info("Auto-generated transcript successful")
+                        break
+                    except Exception as e2:
+                        error_messages.append(f"Auto-generated failed: {str(e2)}")
+                        logging.warning(f"Auto-generated transcript failed: {str(e2)}")
+                elif attempt == 1:
+                    try:
+                        logging.info("Trying manual transcript")
+                        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                        transcript = transcript_list.find_manually_created_transcript(['en']).fetch()
+                        logging.info("Manual transcript successful")
+                        break
+                    except Exception as e3:
+                        error_messages.append(f"Manual transcript failed: {str(e3)}")
+                        logging.warning(f"Manual transcript failed: {str(e3)}")
 
         if transcript is None:
-            logging.error(f"All transcript retrieval methods failed for video {video_id}. Errors: {'; '.join(error_messages)}")
+            error_summary = '; '.join(error_messages)
+            logging.error(f"All transcript retrieval methods failed for video {video_id}. Errors: {error_summary}")
             return None
 
         relevant_text = []
