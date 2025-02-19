@@ -78,14 +78,8 @@ def get_transcript_segment(video_id, current_time):
 
                 logging.info(f"Attempt {attempt + 1}: Direct transcript retrieval")
 
-                # Configure options for transcript retrieval
-                options = {
-                    'languages': ['en'],
-                    'proxies': None,
-                    'verify': False
-                }
-
-                transcript = YouTubeTranscriptApi.get_transcript(video_id, **options)
+                # Only use valid parameters
+                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
                 logging.info("Direct transcript retrieval successful")
                 break
             except Exception as e:
