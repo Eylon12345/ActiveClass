@@ -12,8 +12,8 @@ import random
 import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import time
-from geventwebsocket.handler import WebSocketHandler
-from gevent.pywsgi import WSGIServer
+from gevent import monkey
+monkey.patch_all()
 
 load_dotenv()
 
@@ -29,8 +29,7 @@ socketio = SocketIO(
     ping_timeout=60,
     ping_interval=25,
     engineio_logger=True,
-    logger=True,
-    websocket=True
+    logger=True
 )
 
 logging.basicConfig(level=logging.DEBUG)
@@ -399,15 +398,9 @@ def handle_broadcast_question(data):
         emit('new_question', question_data, room=game_code)
 
 if __name__ == "__main__":
-    # Use gevent's WSGIServer with WebSocket support
-    http_server = WSGIServer(
-        ('0.0.0.0', 5000),
+    socketio.run(
         app,
-        handler_class=WebSocketHandler
+        host="0.0.0.0",
+        port=5000,
+        debug=True
     )
-    socketio.init_app(app)
-    try:
-        logging.info("Starting server with WebSocket support...")
-        http_server.serve_forever()
-    except Exception as e:
-        logging.error(f"Server error: {str(e)}")
