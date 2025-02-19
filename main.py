@@ -12,6 +12,8 @@ import random
 import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from gevent import monkey
+from gevent.pywsgi import WSGIServer
+from geventwebsocket.handler import WebSocketHandler
 import time
 
 # Patch before importing anything else
@@ -402,11 +404,14 @@ def handle_broadcast_question(data):
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
-    # Let Flask-SocketIO handle the server setup with minimal configuration
-    socketio.run(
+
+    # Create a WSGI server with WebSocket support
+    http_server = WSGIServer(
+        ('0.0.0.0', port),
         app,
-        host='0.0.0.0',
-        port=port,
-        debug=True,
-        use_reloader=False
+        handler_class=WebSocketHandler
     )
+
+    # Start server
+    logging.info(f"Server starting on port {port}...")
+    http_server.serve_forever()
