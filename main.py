@@ -243,7 +243,7 @@ def generate_question():
         if question_type == "closed":
             grade_prompt = f"Create questions suitable for {grade_level}th grade students. " if grade_level != "1" else "Create questions suitable for 1st grade students. "
             completion = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4",  # Updated model name
                 messages=[
                     {
                         "role": "system",
