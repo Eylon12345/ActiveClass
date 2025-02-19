@@ -25,6 +25,7 @@ class HostGame {
         this.playerList = document.getElementById('playerList');
         this.playerScores = document.getElementById('playerScores');
         this.videoUrl = document.getElementById('videoUrl');
+        this.gradeLevel = document.getElementById('gradeLevel');
         this.createGameBtn = document.getElementById('createGame');
         this.startGameBtn = document.getElementById('startGame');
         this.questionContainer = document.getElementById('questionContainer');
@@ -36,7 +37,7 @@ class HostGame {
         this.finalScores = document.getElementById('finalScores');
         this.newGameBtn = document.getElementById('newGame');
         this.explanationArea = document.getElementById('explanationArea');
-        this.playerAnswersDisplay = document.getElementById('playerAnswers'); // Corrected ID
+        this.playerAnswersDisplay = document.getElementById('playerAnswers');
 
         this.setupEventListeners();
         this.setupSocketListeners();
@@ -230,7 +231,7 @@ class HostGame {
                     video_id: this.videoId,
                     current_time: currentTime,
                     question_type: 'closed',
-                    difficulty: '6'
+                    difficulty: this.gradeLevel.value
                 }),
             });
 
@@ -274,7 +275,7 @@ class HostGame {
                 text: questionData.reflective_question,
                 correct_answer: questionData.correct_answer,
                 incorrect_answers: questionData.incorrect_answers,
-                content_segment: questionData.content_segment // Added content_segment
+                content_segment: questionData.content_segment
             }
         });
     }
@@ -320,6 +321,14 @@ class HostGame {
 
     displayAnswerResults(results) {
         this.playerAnswersDisplay.innerHTML = '';
+
+        // First highlight the correct answer in the answer options
+        const answerOptions = this.answerArea.querySelectorAll('.answer-option');
+        answerOptions.forEach(option => {
+            if (option.textContent === this.currentQuestion.correct_answer) {
+                option.classList.add('correct');
+            }
+        });
 
         results.forEach(result => {
             const player = this.players.get(result.player_id);

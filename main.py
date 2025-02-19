@@ -167,12 +167,13 @@ def generate_question():
             return jsonify({"success": False, "error": "Could not get video transcript"}), 400
 
         if question_type == "closed":
+            grade_prompt = f"Create questions suitable for {grade_level}th grade students. " if grade_level != "1" else "Create questions suitable for 1st grade students. "
             completion = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert in creating multiple-choice questions. Generate a question with one correct answer and three plausible but incorrect answers."
+                        "content": f"You are an expert in creating multiple-choice questions. {grade_prompt}Generate a question with one correct answer and three plausible but incorrect answers."
                     },
                     {
                         "role": "user",
@@ -189,7 +190,7 @@ def generate_question():
             reflection_prompt = ReflectionClosedPromptResponse.model_validate_json(
                 completion.choices[0].message.function_call.arguments
             )
-            
+
             return jsonify({
                 "success": True,
                 "reflective_question": reflection_prompt.reflection_prompt.question,
