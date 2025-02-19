@@ -35,6 +35,7 @@ class HostGame {
         this.continueVideo = document.getElementById('continueVideo');
         this.finalScores = document.getElementById('finalScores');
         this.newGameBtn = document.getElementById('newGame');
+        this.explanationArea = document.getElementById('explanationArea'); // Added explanation area
 
         this.setupEventListeners();
         this.setupSocketListeners();
@@ -276,12 +277,13 @@ class HostGame {
             question: {
                 text: questionData.reflective_question,
                 correct_answer: questionData.correct_answer,
-                incorrect_answers: questionData.incorrect_answers
+                incorrect_answers: questionData.incorrect_answers,
+                content_segment: questionData.content_segment // Added content_segment
             }
         });
     }
 
-    handlePlayerAnswer(playerId, nickname, answer) {
+    async handlePlayerAnswer(playerId, nickname, answer) {
         if (!this.isQuestionActive) return;
 
         this.playerAnswers.set(playerId, answer);
@@ -290,20 +292,52 @@ class HostGame {
 
         if (this.answersReceived === this.players.size) {
             // Process all answers at once
-            for (const [pid, ans] of this.playerAnswers) {
-                const isCorrect = ans === this.currentQuestion.correct_answer;
-                if (isCorrect) {
-                    const player = this.players.get(pid);
-                    player.score += 100;
-                    this.players.set(pid, player);
-                }
+            this.explanationArea.classList.remove('hidden');
+            this.explanationArea.innerHTML = '<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>';
 
-                // Now send results to all players
-                this.socket.emit('answer_result', {
-                    game_code: this.gameCode,
-                    player_id: pid,
-                    is_correct: isCorrect
-                });
+            // Check each answer with the API
+            for (const [pid, ans] of this.playerAnswers) {
+                try {
+                    const response = await fetch('/api/check_answer', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            content_segment: this.currentQuestion.content_segment,
+                            question: this.currentQuestion.reflective_question,
+                            answer: ans
+                        }),
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        if (data.is_correct) {
+                            const player = this.players.get(pid);
+                            player.score += 100;
+                            this.players.set(pid, player);
+                        }
+
+                        // Emit result to player
+                        this.socket.emit('answer_result', {
+                            game_code: this.gameCode,
+                            player_id: pid,
+                            is_correct: data.is_correct,
+                            explanation: data.explanation
+                        });
+
+                        // Display explanation for the last processed answer
+                        if (pid === Array.from(this.playerAnswers.keys()).pop()) {
+                            this.explanationArea.innerHTML = `
+                                <h5>Answer Explanation:</h5>
+                                <p>${data.explanation}</p>
+                            `;
+                            this.explanationArea.className = data.is_correct ? 'correct' : 'incorrect';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking answer:', error);
+                }
             }
 
             this.updateScoreDisplay();
@@ -314,6 +348,7 @@ class HostGame {
     resumeVideo() {
         this.questionContainer.classList.add('hidden');
         this.continueVideo.classList.add('hidden');
+        this.explanationArea.classList.add('hidden');
         this.isQuestionActive = false;
         this.player.playVideo();
     }

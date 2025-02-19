@@ -81,7 +81,7 @@ class PlayerGame {
 
         this.socket.on('answer_result', (data) => {
             if (data.player_id === this.playerId) {
-                this.showAnswerResult(data.is_correct);
+                this.showAnswerResult(data.is_correct, data.explanation); // Added explanation parameter
             }
         });
     }
@@ -155,7 +155,7 @@ class PlayerGame {
         this.feedback.classList.remove('hidden');
     }
 
-    showAnswerResult(isCorrect) {
+    showAnswerResult(isCorrect, explanation) {
         if (isCorrect) {
             this.score += 100;
             if (this.playerScore) {
@@ -168,7 +168,10 @@ class PlayerGame {
             selectedOption.classList.add(isCorrect ? 'correct' : 'incorrect');
         }
 
-        this.feedback.textContent = isCorrect ? 'Correct!' : 'Incorrect!';
+        this.feedback.innerHTML = `
+            <strong>${isCorrect ? 'Correct!' : 'Incorrect!'}</strong>
+            <p class="mb-0 mt-2">${explanation}</p>
+        `;
         this.feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
         this.feedback.classList.remove('hidden');
     }

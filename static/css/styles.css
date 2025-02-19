@@ -3,6 +3,22 @@
     display: none !important;
 }
 
+/* Video Container */
+.video-container {
+    position: relative;
+    height: 75vh;
+    width: 100%;
+    background-color: var(--bs-gray-900);
+}
+
+.video-container #player {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
 /* Game Code Display */
 #gameCode {
     font-size: 2rem;
@@ -70,6 +86,21 @@
     color: white;
 }
 
+/* Explanation Area */
+#explanationArea {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--bs-gray-800);
+}
+
+#explanationArea.correct {
+    border-left: 4px solid var(--bs-success);
+}
+
+#explanationArea.incorrect {
+    border-left: 4px solid var(--bs-danger);
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -85,7 +116,7 @@
     #gameCode {
         font-size: 1.5rem;
     }
-    
+
     .answer-option {
         padding: 0.75rem;
     }
