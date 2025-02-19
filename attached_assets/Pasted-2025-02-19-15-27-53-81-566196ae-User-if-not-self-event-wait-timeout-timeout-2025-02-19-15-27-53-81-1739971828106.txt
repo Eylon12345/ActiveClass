@@ -1,0 +1,114 @@
+2025-02-19 15:27:53.81
+566196ae
+User
+if not self.event.wait(timeout=timeout):
+2025-02-19 15:27:53.81
+566196ae
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 15:27:53.81
+566196ae
+User
+File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 629, in wait
+2025-02-19 15:27:53.81
+566196ae
+User
+signaled = self._cond.wait(timeout)
+2025-02-19 15:27:53.81
+566196ae
+User
+^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 15:27:53.81
+566196ae
+User
+File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 327, in wait
+2025-02-19 15:27:53.81
+566196ae
+User
+waiter.acquire()
+2025-02-19 15:27:53.81
+566196ae
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/base.py", line 204, in handle_abort
+2025-02-19 15:27:53.81
+566196ae
+User
+sys.exit(1)
+2025-02-19 15:27:53.81
+566196ae
+User
+SystemExit: 1
+2025-02-19 15:27:53.81
+566196ae
+User
+[2025-02-19 13:27:53 +0000] [33] [INFO] Worker exiting (pid: 33)
+2025-02-19 15:27:54.34
+566196ae
+User
+[2025-02-19 13:27:54 +0000] [40] [INFO] Booting worker with pid: 40
+2025-02-19 15:27:55.51
+566196ae
+User
+Invalid session tbYSKmMuNaJBeMJKAAAC (further occurrences of this error will be logged with level INFO)
+2025-02-19 15:27:55.51
+566196ae
+User
+ERROR:engineio.server:Invalid session tbYSKmMuNaJBeMJKAAAC (further occurrences of this error will be logged with level INFO)
+2025-02-19 15:27:55.51
+566196ae
+User
+INFO:root:Creating game for video ID: SzKkBOUvsAY
+2025-02-19 15:27:55.51
+566196ae
+User
+INFO:root:Attempting to get transcript for video SzKkBOUvsAY
+2025-02-19 15:27:55.51
+566196ae
+User
+INFO:root:Attempt 1: Direct transcript retrieval
+2025-02-19 15:27:55.52
+566196ae
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-19 15:27:55.56
+566196ae
+User
+DEBUG:urllib3.connectionpool:https://www.youtube.com:443 "GET /watch?v=SzKkBOUvsAY HTTP/1.1" 200 None
+2025-02-19 15:27:56.00
+566196ae
+User
+WARNING:root:Attempt 1 failed:
+2025-02-19 15:27:56.00
+566196ae
+User
+Could not retrieve a transcript for the video https://www.youtube.com/watch?v=SzKkBOUvsAY! This is most likely caused by:
+2025-02-19 15:27:56.00
+566196ae
+User
+2025-02-19 15:27:56.00
+566196ae
+User
+Subtitles are disabled for this video
+2025-02-19 15:27:56.00
+566196ae
+User
+2025-02-19 15:27:56.00
+566196ae
+User
+If you are sure that the described cause is not responsible for this error and that a transcript should be retrievable, please create an issue at https://github.com/jdepoix/youtube-transcript-api/issues. Please add which version of youtube_transcript_api you are using and provide the information needed to replicate the error. Also make sure that there are no open issues which already describe your problem!
+2025-02-19 15:27:56.00
+566196ae
+User
+INFO:root:Trying alternative transcript retrieval method
+2025-02-19 15:27:56.00
+566196ae
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-19 15:27:56.04
+566196ae
+User
+DEBUG:urllib3.connectionpool:https://www.youtube.com:443 "GET /watch?v=SzKkBOUvsAY HTTP/1.1" 200 None
+2025-02-19 15:27:56.59
+566196ae
+User
+WARNING:root:Transcript listing failed for attempt 1

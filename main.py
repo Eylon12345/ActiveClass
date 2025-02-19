@@ -18,15 +18,23 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Configure SocketIO with proper async mode and other settings
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='gevent',
+    ping_timeout=60,
+    ping_interval=25,
+    engineio_logger=True
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
 # Initialize the OpenAI client
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# Store active games in memory
+# Store active games in memory with proper session handling
 active_games = {}
 
 class ReflectionClosedQuestion(BaseModel):
@@ -70,15 +78,12 @@ def get_transcript_segment(video_id, current_time):
 
         for attempt in range(max_retries):
             try:
-                # Exponential backoff
                 if attempt > 0:
                     delay = base_delay * (2 ** (attempt - 1))
                     logging.info(f"Waiting {delay} seconds before retry {attempt + 1}")
                     time.sleep(delay)
 
                 logging.info(f"Attempt {attempt + 1}: Direct transcript retrieval")
-
-                # Only use valid parameters
                 transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
                 logging.info("Direct transcript retrieval successful")
                 break
@@ -317,17 +322,33 @@ def check_answer():
         logging.error(f"Error checking answers: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-# Socket.IO event handlers
+# Socket.IO event handlers with proper error handling
+@socketio.on_error_default
+def default_error_handler(e):
+    logging.error(f"SocketIO Error: {str(e)}")
+    return {"error": str(e)}
+
 @socketio.on('connect')
 def handle_connect():
     logging.info('Client connected')
 
+@socketio.on('disconnect')
+def handle_disconnect():
+    logging.info('Client disconnected')
+
 @socketio.on('join_game_room')
 def handle_join_room(data):
-    game_code = data['game_code']
-    if game_code in active_games:
-        join_room(game_code)
-        emit('room_joined', {'game_code': game_code})
+    try:
+        game_code = data['game_code']
+        if game_code in active_games:
+            join_room(game_code)
+            emit('room_joined', {'game_code': game_code})
+            logging.info(f"Client joined room: {game_code}")
+        else:
+            emit('error', {'message': 'Invalid game code'})
+    except Exception as e:
+        logging.error(f"Error joining room: {str(e)}")
+        emit('error', {'message': 'Error joining room'})
 
 @socketio.on('start_game')
 def handle_start_game(data):
@@ -374,4 +395,11 @@ def handle_broadcast_question(data):
         emit('new_question', question_data, room=game_code)
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, host="0.0.0.0", port=5000)
+    socketio.run(
+        app,
+        debug=True,
+        host="0.0.0.0",
+        port=5000,
+        use_reloader=True,
+        log_output=True
+    )
