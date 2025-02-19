@@ -12,9 +12,6 @@ import random
 import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from gevent import monkey
-from gevent.pywsgi import WSGIServer
-from geventwebsocket.handler import WebSocketHandler
-import time
 
 # Patch before importing anything else
 monkey.patch_all()
@@ -25,18 +22,22 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 CORS(app)
 
-# Configure SocketIO with proper async mode and other settings
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Configure SocketIO with proper async mode
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     async_mode='gevent',
     ping_timeout=60,
     ping_interval=25,
+    logger=True,
     engineio_logger=True,
-    logger=True
+    always_connect=True,
+    async_handlers=True
 )
-
-logging.basicConfig(level=logging.DEBUG)
 
 # Initialize the OpenAI client
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -405,13 +406,12 @@ if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
 
-    # Create a WSGI server with WebSocket support
-    http_server = WSGIServer(
-        ('0.0.0.0', port),
+    # Use Flask-SocketIO's built-in server
+    socketio.run(
         app,
-        handler_class=WebSocketHandler
+        host='0.0.0.0',
+        port=port,
+        debug=True,
+        use_reloader=False,
+        log_output=True
     )
-
-    # Start server
-    logging.info(f"Server starting on port {port}...")
-    http_server.serve_forever()

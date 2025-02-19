@@ -1,0 +1,216 @@
+2025-02-19 18:23:31.47
+b75fdb72
+User
+packets = socket.handle_get_request(
+2025-02-19 18:23:31.47
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:31.47
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-19 18:23:31.47
+b75fdb72
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-19 18:23:31.47
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:31.47
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-19 18:23:31.47
+b75fdb72
+User
+return ws(environ, start_response)
+2025-02-19 18:23:31.47
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:31.47
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-19 18:23:31.47
+b75fdb72
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-19 18:23:31.47
+b75fdb72
+User
+RuntimeError: The gevent-websocket server is not configured appropriately. See the Deployment section of the documentation for more information.
+2025-02-19 18:23:31.47
+b75fdb72
+User
+U2VuboqC2gS6lnVSAAAA: Received packet CLOSE data
+2025-02-19 18:23:31.47
+b75fdb72
+User
+INFO:engineio.server:U2VuboqC2gS6lnVSAAAA: Received packet CLOSE data
+2025-02-19 18:23:31.47
+b75fdb72
+User
+ERROR:root:SocketIO Error: handle_disconnect() takes 0 positional arguments but 1 was given
+2025-02-19 18:23:44.70
+b75fdb72
+User
+P-bD9STdbLs21pEeAAAC: Sending packet OPEN data {'sid': 'P-bD9STdbLs21pEeAAAC', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-19 18:23:44.70
+b75fdb72
+User
+INFO:engineio.server:P-bD9STdbLs21pEeAAAC: Sending packet OPEN data {'sid': 'P-bD9STdbLs21pEeAAAC', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-19 18:23:44.89
+b75fdb72
+User
+P-bD9STdbLs21pEeAAAC: Received packet MESSAGE data 0
+2025-02-19 18:23:44.89
+b75fdb72
+User
+INFO:engineio.server:P-bD9STdbLs21pEeAAAC: Received packet MESSAGE data 0
+2025-02-19 18:23:44.89
+b75fdb72
+User
+INFO:root:Client connected
+2025-02-19 18:23:44.89
+b75fdb72
+User
+P-bD9STdbLs21pEeAAAC: Sending packet MESSAGE data 0{"sid":"C5cOo2Giff9gi8rKAAAD"}
+2025-02-19 18:23:44.89
+b75fdb72
+User
+INFO:engineio.server:P-bD9STdbLs21pEeAAAC: Sending packet MESSAGE data 0{"sid":"C5cOo2Giff9gi8rKAAAD"}
+2025-02-19 18:23:45.07
+b75fdb72
+User
+P-bD9STdbLs21pEeAAAC: Received request to upgrade to websocket
+2025-02-19 18:23:45.07
+b75fdb72
+User
+INFO:engineio.server:P-bD9STdbLs21pEeAAAC: Received request to upgrade to websocket
+2025-02-19 18:23:45.07
+b75fdb72
+User
+[2025-02-19 16:23:45 +0000] [32] [ERROR] Error handling request /socket.io/?EIO=4&transport=websocket&sid=P-bD9STdbLs21pEeAAAC
+2025-02-19 18:23:45.07
+b75fdb72
+User
+Traceback (most recent call last):
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 134, in handle
+2025-02-19 18:23:45.07
+b75fdb72
+User
+self.handle_request(listener, req, client, addr)
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 177, in handle_request
+2025-02-19 18:23:45.07
+b75fdb72
+User
+respiter = self.wsgi(environ, resp.start_response)
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+2025-02-19 18:23:45.07
+b75fdb72
+User
+return self.wsgi_app(environ, start_response)
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+2025-02-19 18:23:45.07
+b75fdb72
+User
+return super().__call__(environ, start_response)
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+2025-02-19 18:23:45.07
+b75fdb72
+User
+return self.engineio_app.handle_request(environ, start_response)
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+2025-02-19 18:23:45.07
+b75fdb72
+User
+return self.eio.handle_request(environ, start_response)
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+2025-02-19 18:23:45.07
+b75fdb72
+User
+packets = socket.handle_get_request(
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-19 18:23:45.07
+b75fdb72
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-19 18:23:45.07
+b75fdb72
+User
+return ws(environ, start_response)
+2025-02-19 18:23:45.07
+b75fdb72
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-19 18:23:45.07
+b75fdb72
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-19 18:23:45.07
+b75fdb72
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-19 18:23:45.07
+b75fdb72
+User
+RuntimeError: The gevent-websocket server
