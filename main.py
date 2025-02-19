@@ -11,8 +11,10 @@ import re
 import random
 import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
-import time
 from gevent import monkey
+import time
+
+# Patch before importing anything else
 monkey.patch_all()
 
 load_dotenv()
@@ -398,9 +400,13 @@ def handle_broadcast_question(data):
         emit('new_question', question_data, room=game_code)
 
 if __name__ == "__main__":
+    logging.info("Starting server with WebSocket support...")
+    port = int(os.getenv("PORT", 5000))
+    # Let Flask-SocketIO handle the server setup with minimal configuration
     socketio.run(
         app,
-        host="0.0.0.0",
-        port=5000,
-        debug=True
+        host='0.0.0.0',
+        port=port,
+        debug=True,
+        use_reloader=False
     )
