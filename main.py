@@ -1,4 +1,5 @@
 import os
+import time  # Add missing time import
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
@@ -406,7 +407,7 @@ if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
 
-    # Use Flask-SocketIO's built-in server
+    # Use Flask-SocketIO's built-in server for development; Gunicorn for production
     socketio.run(
         app,
         host='0.0.0.0',
