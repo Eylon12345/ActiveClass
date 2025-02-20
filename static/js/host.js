@@ -38,6 +38,7 @@ class HostGame {
         this.newGameBtn = document.getElementById('newGame');
         this.explanationArea = document.getElementById('explanationArea');
         this.playerAnswersDisplay = document.getElementById('playerAnswers');
+        this.showFeedbackBtn = document.getElementById('showFeedback');
 
         this.setupEventListeners();
         this.setupSocketListeners();
@@ -56,6 +57,7 @@ class HostGame {
         this.startGameBtn.addEventListener('click', () => this.startGame());
         this.continueVideo.addEventListener('click', () => this.resumeVideo());
         this.newGameBtn.addEventListener('click', () => window.location.reload());
+        this.showFeedbackBtn.addEventListener('click', () => this.showFeedback());
     }
 
     setupSocketListeners() {
@@ -375,6 +377,12 @@ class HostGame {
         this.explanationArea.classList.add('hidden');
         this.isQuestionActive = false;
         this.player.playVideo();
+    }
+
+    showFeedback() {
+        if (this.gameCode) {
+            this.socket.emit('show_feedback', { game_code: this.gameCode });
+        }
     }
 }
 
