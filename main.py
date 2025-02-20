@@ -356,6 +356,24 @@ def handle_start_game(data):
         active_games[game_code]['phase'] = 'playing'
         emit('game_started', {}, room=game_code)
 
+@socketio.on('skip_feedback')
+def handle_skip_feedback(data):
+    """Handle manual skipping of feedback stage by host."""
+    game_code = data['game_code']
+    if game_code in active_games:
+        # Cancel feedback timer if it exists
+        if 'feedback_timer' in active_games[game_code]:
+            active_games[game_code]['feedback_timer'].cancel()
+            active_games[game_code]['feedback_timer'] = None
+
+        # Clear current question and answers
+        active_games[game_code]['current_question'] = None
+        active_games[game_code]['submitted_answers'] = []
+        active_games[game_code]['phase'] = 'playing'
+
+        # Notify clients that feedback has been skipped
+        emit('feedback_ended', {}, room=game_code)
+
 @socketio.on('show_feedback')
 def handle_show_feedback(data):
     """Handle manual triggering of feedback stage."""
@@ -383,7 +401,8 @@ def handle_show_feedback(data):
         # Emit feedback event with current answers and timer
         emit('show_feedback', {
             'answers': submitted_answers,
-            'feedback_timer': remaining_feedback_time
+            'feedback_timer': remaining_feedback_time,
+            'can_skip': True  # Add flag to indicate skip button should be shown
         }, room=game_code)
 
 @socketio.on('submit_answer')
