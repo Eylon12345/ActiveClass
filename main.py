@@ -1,5 +1,4 @@
 import os
-import time
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
@@ -12,36 +11,20 @@ import re
 import random
 import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from gevent import monkey
-
-# Patch before importing anything else
-monkey.patch_all()
+import threading
+from datetime import datetime, timedelta
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Configure logging
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-# Configure SocketIO with proper async mode and manage_session=False
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode='gevent',
-    ping_timeout=60,
-    ping_interval=25,
-    logger=True,
-    engineio_logger=True,
-    always_connect=True,
-    async_handlers=True,
-    manage_session=False
-)
 
 # Initialize the OpenAI client
+# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Store active games in memory
@@ -79,55 +62,44 @@ def extract_video_id(url):
 
 def get_transcript_segment(video_id, current_time):
     try:
+        # Try multiple transcript retrieval methods
         transcript = None
         error_messages = []
-        max_retries = 3
-        base_delay = 1
 
+        # Log all attempts for debugging
         logging.info(f"Attempting to get transcript for video {video_id}")
 
-        for attempt in range(max_retries):
+        # Method 1: Try direct transcript
+        try:
+            logging.info("Attempting direct transcript retrieval")
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            logging.info("Direct transcript retrieval successful")
+        except Exception as e:
+            error_messages.append(f"Direct transcript: {str(e)}")
+            logging.info(f"Direct transcript failed: {str(e)}")
+
+            # Method 2: Try auto-generated transcripts first
             try:
-                if attempt > 0:
-                    delay = base_delay * (2 ** (attempt - 1))
-                    logging.info(f"Waiting {delay} seconds before retry {attempt + 1}")
-                    time.sleep(delay)
-
-                logging.info(f"Attempt {attempt + 1}: Direct transcript retrieval")
-                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
-                logging.info("Direct transcript retrieval successful")
-                break
+                logging.info("Attempting auto-generated transcript retrieval")
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                transcript = transcript_list.find_generated_transcript(['en']).fetch()
+                logging.info("Auto-generated transcript retrieval successful")
             except Exception as e:
-                error_msg = f"Attempt {attempt + 1} failed: {str(e)}"
-                error_messages.append(error_msg)
-                logging.warning(error_msg)
+                error_messages.append(f"Auto-generated transcript: {str(e)}")
+                logging.info(f"Auto-generated transcript failed: {str(e)}")
 
-                # Only try alternative methods if we haven't succeeded yet
-                if transcript is None:
-                    try:
-                        logging.info("Trying alternative transcript retrieval method")
-                        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-
-                        # Try both generated and manual transcripts
-                        try:
-                            transcript = transcript_list.find_generated_transcript(['en']).fetch()
-                            logging.info("Auto-generated transcript successful")
-                            break
-                        except Exception as e2:
-                            try:
-                                transcript = transcript_list.find_manually_created_transcript(['en']).fetch()
-                                logging.info("Manual transcript successful")
-                                break
-                            except Exception as e3:
-                                error_messages.append(f"All transcript types failed: {str(e2)}, {str(e3)}")
-                                logging.warning(f"All transcript types failed for attempt {attempt + 1}")
-                    except Exception as e4:
-                        error_messages.append(f"Transcript listing failed: {str(e4)}")
-                        logging.warning(f"Transcript listing failed for attempt {attempt + 1}")
+                # Method 3: Try manual transcripts with language specification
+                try:
+                    logging.info("Attempting manual transcript retrieval with language specification")
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                    transcript = transcript_list.find_manually_created_transcript(['en']).fetch()
+                    logging.info("Manual transcript retrieval successful")
+                except Exception as e:
+                    error_messages.append(f"Manual transcript: {str(e)}")
+                    logging.info(f"Manual transcript failed: {str(e)}")
 
         if transcript is None:
-            error_summary = '; '.join(error_messages)
-            logging.error(f"All transcript retrieval methods failed for video {video_id}. Errors: {error_summary}")
+            logging.error(f"All transcript retrieval methods failed for video {video_id}. Errors: {'; '.join(error_messages)}")
             return None
 
         relevant_text = []
@@ -249,7 +221,7 @@ def generate_question():
         if question_type == "closed":
             grade_prompt = f"Create questions suitable for {grade_level}th grade students. " if grade_level != "1" else "Create questions suitable for 1st grade students. "
             completion = client.chat.completions.create(
-                model="gpt-4",  # Updated model name
+                model="gpt-4o",
                 messages=[
                     {
                         "role": "system",
@@ -332,11 +304,17 @@ def check_answer():
         logging.error(f"Error checking answers: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-# Socket.IO event handlers with proper error handling
-@socketio.on_error_default
-def default_error_handler(e):
-    logging.error(f"SocketIO Error: {str(e)}")
-    return {"error": str(e)}
+# Socket.IO event handlers
+def start_answer_timer(game_code):
+    """Start a timer for the current question. After 60 seconds, trigger feedback."""
+    def timer_callback():
+        if game_code in active_games and active_games[game_code]['phase'] == 'answering':
+            handle_show_feedback({'game_code': game_code})
+
+    timer = threading.Timer(60.0, timer_callback)
+    timer.start()
+    active_games[game_code]['current_timer'] = timer
+    active_games[game_code]['timer_end'] = datetime.now() + timedelta(seconds=60)
 
 @socketio.on('connect')
 def handle_connect():
@@ -349,17 +327,10 @@ def handle_disconnect(sid):
 
 @socketio.on('join_game_room')
 def handle_join_room(data):
-    try:
-        game_code = data['game_code']
-        if game_code in active_games:
-            join_room(game_code)
-            emit('room_joined', {'game_code': game_code})
-            logging.info(f"Client joined room: {game_code}")
-        else:
-            emit('error', {'message': 'Invalid game code'})
-    except Exception as e:
-        logging.error(f"Error joining room: {str(e)}")
-        emit('error', {'message': 'Error joining room'})
+    game_code = data['game_code']
+    if game_code in active_games:
+        join_room(game_code)
+        emit('room_joined', {'game_code': game_code})
 
 @socketio.on('start_game')
 def handle_start_game(data):
@@ -368,17 +339,74 @@ def handle_start_game(data):
         active_games[game_code]['phase'] = 'playing'
         emit('game_started', {}, room=game_code)
 
+@socketio.on('show_feedback')
+def handle_show_feedback(data):
+    """Handle manual triggering of feedback stage."""
+    game_code = data['game_code']
+    if game_code in active_games:
+        # Cancel timer if it exists
+        if 'current_timer' in active_games[game_code]:
+            active_games[game_code]['current_timer'].cancel()
+            active_games[game_code]['current_timer'] = None
+
+        # Change phase to feedback
+        active_games[game_code]['phase'] = 'feedback'
+
+        # Get all submitted answers
+        submitted_answers = active_games[game_code].get('submitted_answers', [])
+
+        # Emit feedback event with current answers
+        emit('show_feedback', {
+            'answers': submitted_answers
+        }, room=game_code)
+
 @socketio.on('submit_answer')
 def handle_submit_answer(data):
     game_code = data['game_code']
     player_id = data['player_id']
     answer = data['answer']
-    
+
     if game_code in active_games and player_id in active_games[game_code]['players']:
+        # Store the answer
+        if 'submitted_answers' not in active_games[game_code]:
+            active_games[game_code]['submitted_answers'] = []
+
+        active_games[game_code]['submitted_answers'].append({
+            'player_id': player_id,
+            'nickname': active_games[game_code]['players'][player_id]['nickname'],
+            'answer': answer
+        })
+
+        # Emit answer submitted event
         emit('answer_submitted', {
             'player_id': player_id,
             'nickname': active_games[game_code]['players'][player_id]['nickname'],
             'answer': answer
+        }, room=game_code)
+
+        # Update remaining time
+        if 'timer_end' in active_games[game_code]:
+            remaining_time = (active_games[game_code]['timer_end'] - datetime.now()).total_seconds()
+            emit('timer_update', {'remaining_time': max(0, remaining_time)}, room=game_code)
+
+@socketio.on('broadcast_question')
+def handle_broadcast_question(data):
+    game_code = data['game_code']
+    question_data = data['question']
+
+    if game_code in active_games:
+        # Reset submitted answers
+        active_games[game_code]['submitted_answers'] = []
+        active_games[game_code]['phase'] = 'answering'
+        active_games[game_code]['current_question'] = question_data
+
+        # Start the timer
+        start_answer_timer(game_code)
+
+        # Emit the new question with timer information
+        emit('new_question', {
+            **question_data,
+            'timer_duration': 60
         }, room=game_code)
 
 @socketio.on('answer_result')
@@ -396,16 +424,7 @@ def handle_answer_result(data):
             'is_correct': is_correct
         }, room=game_code)
 
-@socketio.on('broadcast_question')
-def handle_broadcast_question(data):
-    game_code = data['game_code']
-    question_data = data['question']
-
-    if game_code in active_games:
-        active_games[game_code]['current_question'] = question_data
-        emit('new_question', question_data, room=game_code)
-
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    socketio.run(app, debug=True, host="0.0.0.0", port=port)
