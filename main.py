@@ -338,9 +338,8 @@ def handle_connect():
     logging.info('Client connected')
 
 @socketio.on('disconnect')
-def handle_disconnect(sid):
-    """Handle client disconnection."""
-    logging.info(f'Client disconnected: {sid}')
+def handle_disconnect():
+    logging.info('Client disconnected')
 
 @socketio.on('join_game_room')
 def handle_join_room(data):
@@ -451,7 +450,8 @@ def handle_broadcast_question(data):
         # Emit the new question with timer information
         emit('new_question', {
             **question_data,
-            'timer_duration': 60
+            'timer_duration': 60,
+            'show_feedback_button': True  # Add flag to show feedback button for host
         }, room=game_code)
 
 @socketio.on('answer_result')
