@@ -379,7 +379,7 @@ def handle_show_feedback(data):
     game_code = data['game_code']
     if game_code in active_games:
         # Cancel answer timer if it exists
-        if 'current_timer' in active_games[game_code]:
+        if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer'] is not None:
             active_games[game_code]['current_timer'].cancel()
             active_games[game_code]['current_timer'] = None
 
