@@ -316,6 +316,23 @@ def start_answer_timer(game_code):
     active_games[game_code]['current_timer'] = timer
     active_games[game_code]['timer_end'] = datetime.now() + timedelta(seconds=60)
 
+def start_feedback_timer(game_code):
+    """Start a timer for the feedback stage. After 60 seconds, automatically proceed."""
+    def feedback_timer_callback():
+        if game_code in active_games and active_games[game_code]['phase'] == 'feedback':
+            # Clear current question and answers
+            active_games[game_code]['current_question'] = None
+            active_games[game_code]['submitted_answers'] = []
+            active_games[game_code]['phase'] = 'playing'
+
+            # Notify clients that feedback time is over
+            emit('feedback_ended', {}, room=game_code)
+
+    timer = threading.Timer(60.0, feedback_timer_callback)
+    timer.start()
+    active_games[game_code]['feedback_timer'] = timer
+    active_games[game_code]['feedback_timer_end'] = datetime.now() + timedelta(seconds=60)
+
 @socketio.on('connect')
 def handle_connect():
     logging.info('Client connected')
@@ -344,7 +361,7 @@ def handle_show_feedback(data):
     """Handle manual triggering of feedback stage."""
     game_code = data['game_code']
     if game_code in active_games:
-        # Cancel timer if it exists
+        # Cancel answer timer if it exists
         if 'current_timer' in active_games[game_code]:
             active_games[game_code]['current_timer'].cancel()
             active_games[game_code]['current_timer'] = None
@@ -355,9 +372,18 @@ def handle_show_feedback(data):
         # Get all submitted answers
         submitted_answers = active_games[game_code].get('submitted_answers', [])
 
-        # Emit feedback event with current answers
+        # Start feedback timer
+        start_feedback_timer(game_code)
+
+        # Calculate remaining feedback time
+        remaining_feedback_time = 60  # Start with full time
+        if 'feedback_timer_end' in active_games[game_code]:
+            remaining_feedback_time = max(0, (active_games[game_code]['feedback_timer_end'] - datetime.now()).total_seconds())
+
+        # Emit feedback event with current answers and timer
         emit('show_feedback', {
-            'answers': submitted_answers
+            'answers': submitted_answers,
+            'feedback_timer': remaining_feedback_time
         }, room=game_code)
 
 @socketio.on('submit_answer')
