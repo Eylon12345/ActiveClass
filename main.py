@@ -377,7 +377,10 @@ def handle_skip_feedback(data):
 def handle_show_feedback(data):
     """Handle manual triggering of feedback stage."""
     game_code = data['game_code']
+    logging.info(f'Attempting to show feedback for game {game_code}')
+
     if game_code in active_games:
+        logging.info('Game found, proceeding with feedback')
         # Cancel answer timer if it exists
         if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer'] is not None:
             active_games[game_code]['current_timer'].cancel()
@@ -388,6 +391,7 @@ def handle_show_feedback(data):
 
         # Get all submitted answers
         submitted_answers = active_games[game_code].get('submitted_answers', [])
+        logging.info(f'Found {len(submitted_answers)} submitted answers')
 
         # Start feedback timer
         start_feedback_timer(game_code)
@@ -403,6 +407,9 @@ def handle_show_feedback(data):
             'feedback_timer': remaining_feedback_time,
             'can_skip': True  # Add flag to indicate skip button should be shown
         }, room=game_code)
+        logging.info('Feedback event emitted successfully')
+    else:
+        logging.error(f'Game {game_code} not found')
 
 @socketio.on('submit_answer')
 def handle_submit_answer(data):
