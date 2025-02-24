@@ -454,11 +454,23 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
-    socketio.run(
-        app,
-        host="0.0.0.0",
-        port=port,
-        debug=True,
-        use_reloader=True,
-        log_output=True
-    )
+
+    if os.environ.get("RUNNING_IN_PRODUCTION"):
+        # Let Gunicorn handle the server
+        socketio.run(
+            app,
+            host="0.0.0.0",
+            port=port,
+            debug=True,
+            use_reloader=True,
+            log_output=True
+        )
+    else:
+        # Run with gevent-websocket in development
+        server = WSGIServer(
+            ('0.0.0.0', port),
+            app,
+            handler_class=WebSocketHandler
+        )
+        logging.info(f"Server starting on port {port}")
+        server.serve_forever()
