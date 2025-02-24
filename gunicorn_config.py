@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.DEBUG)
 logging.info("Loading custom Gunicorn configuration...")
 
 # Worker Settings
-worker_class = "geventwebsocket.gunicorn.workers.GeventWebSocketWorker"
+worker_class = "eventlet"  # Changed to eventlet for consistency with main.py
 workers = 1  # Single worker for WebSocket support
 worker_connections = 1000
 timeout = 120
