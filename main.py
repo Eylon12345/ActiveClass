@@ -35,9 +35,7 @@ socketio = SocketIO(
     engineio_logger=True,
     ping_timeout=60,
     ping_interval=25,
-    manage_session=False,  # Disable session handling to avoid conflicts
-    wsgi_server=WSGIServer,  # Explicitly set WSGI server
-    websocket_handler=WebSocketHandler  # Explicitly set WebSocket handler
+    manage_session=False  # Disable session handling to avoid conflicts
 )
 
 # Store active games in memory
@@ -454,15 +452,16 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
+    debug_mode = os.environ.get('FLASK_ENV') == 'development' #Check for development mode
 
     try:
-        # Run with gevent-websocket in development
-        server = WSGIServer(
-            ('0.0.0.0', port),
+        socketio.run(
             app,
-            handler_class=WebSocketHandler
+            host='0.0.0.0',
+            port=port,
+            debug=debug_mode,
+            use_reloader=not debug_mode, #Use reloader only in development
+            log_output=True
         )
-        logging.info(f"Server starting on port {port}")
-        server.serve_forever()
     except Exception as e:
         logging.exception(f"A critical error occurred: {str(e)}")
