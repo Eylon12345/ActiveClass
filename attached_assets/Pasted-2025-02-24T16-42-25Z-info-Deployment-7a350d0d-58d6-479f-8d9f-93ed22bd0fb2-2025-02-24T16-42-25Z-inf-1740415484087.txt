@@ -1,0 +1,41 @@
+2025-02-24T16:42:25Z info: Deployment: 7a350d0d-58d6-479f-8d9f-93ed22bd0fb2
+2025-02-24T16:42:25Z info: Build: 0d2bf735-c0f0-4ba9-a82a-52c33f870dbe
+2025-02-24T16:42:25Z info: Connecting to builder
+2025-02-24T16:42:39Z info: Builder connected
+2025-02-24T16:42:39Z info: Installing packages
+2025-02-24T16:42:39Z info: Skipping Build as no Build command set
+2025-02-24T16:42:41Z info: Pushing pid1 binary layer...
+2025-02-24T16:42:42Z info: Created pid1 binary layer
+2025-02-24T16:42:44Z info: Pushing hosting layer...
+2025-02-24T16:42:44Z info: Pushing Repl layer...
+2025-02-24T16:42:44Z info: Retrieved cached nix layer
+2025-02-24T16:42:44Z info: Created hosting layer
+2025-02-24T16:42:25Z info: Deployment: 7a350d0d-58d6-479f-8d9f-93ed22bd0fb2
+2025-02-24T16:42:25Z info: Build: 0d2bf735-c0f0-4ba9-a82a-52c33f870dbe
+2025-02-24T16:42:25Z info: Connecting to builder
+2025-02-24T16:42:39Z info: Builder connected
+2025-02-24T16:42:39Z info: Installing packages
+2025-02-24T16:42:39Z info: Skipping Build as no Build command set
+2025-02-24T16:42:41Z info: Pushing pid1 binary layer...
+2025-02-24T16:42:42Z info: Created pid1 binary layer
+2025-02-24T16:42:44Z info: Pushing hosting layer...
+2025-02-24T16:42:44Z info: Pushing Repl layer...
+2025-02-24T16:42:44Z info: Retrieved cached nix layer
+2025-02-24T16:42:44Z info: Created hosting layer
+2025-02-24T16:43:01Z info: Created Repl layer
+2025-02-24T16:43:01Z info: Pushing Repl (cache) layer...
+2025-02-24T16:43:02Z info: Created Repl (cache) layer
+2025-02-24T16:43:02Z info: Pushed image manifest
+2025-02-24T16:43:02Z info: Pushed soci index manifest
+2025-02-24T16:43:03Z info: Pushed referrer manifest
+2025-02-24T16:43:06Z info: Creating Autoscale service
+[2025-02-24 16:43:25 +0000] [25] [INFO] Starting gunicorn 23.0.0
+[2025-02-24 16:43:25 +0000] [25] [INFO] Using worker: sync
+starting up user application
+[2025-02-24 16:43:25 +0000] [30] [INFO] Booting worker with pid: 30
+forwarding local port 5000 to external port 80
+[2025-02-24 16:43:25 +0000] [25] [INFO] Listening at: http://0.0.0.0:5000 (25)
+INFO:engineio.server:Server initialized for gevent.
+Server initialized for gevent.
+2025-02-24T16:43:34Z info: Waiting for service to be ready
+2025-02-24T16:43:37Z info: Deployment successful

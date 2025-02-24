@@ -464,7 +464,8 @@ if __name__ == "__main__":
                 port=port,
                 debug=False, #Set to False in production
                 use_reloader=False, #Set to False in production
-                log_output=True
+                log_output=True,
+                worker_class='geventwebsocket.gunicorn.workers.GeventWebSocketWorker'  # Explicitly set worker class
             )
         else:
             # Run with gevent-websocket in development
