@@ -8,7 +8,7 @@ dependencies = [
     "flask-cors>=5.0.0",
     "flask>=3.1.0",
     "flask-sqlalchemy>=3.1.1",
-    "gunicorn==21.2.0",
+    "gunicorn>=21.2.0",
     "openai>=1.63.2",
     "psycopg2-binary>=2.9.10",
     "flask-socketio>=5.0.0",
@@ -17,5 +17,5 @@ dependencies = [
     "pydantic>=2.10.6",
     "trafilatura>=2.0.0",
     "gevent-websocket==0.10.1",
-    "gevent>=24.11.1",
+    "gevent>=23.9.1",
 ]
