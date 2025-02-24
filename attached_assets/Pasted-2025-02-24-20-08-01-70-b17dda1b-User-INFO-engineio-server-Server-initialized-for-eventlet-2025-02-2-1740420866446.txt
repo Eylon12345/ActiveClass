@@ -1,0 +1,168 @@
+2025-02-24 20:08:01.70
+b17dda1b
+User
+INFO:engineio.server:Server initialized for eventlet.
+2025-02-24 20:08:02.21
+b17dda1b
+User
+INFO:__main__:Starting server with WebSocket support...
+2025-02-24 20:08:02.21
+b17dda1b
+User
+(30) wsgi starting up on http://0.0.0.0:5000
+2025-02-24 20:08:02.59
+b17dda1b
+User
+(30) accepted ('127.0.0.1', 54454)
+2025-02-24 20:08:02.60
+b17dda1b
+User
+127.0.0.1 - - [24/Feb/2025 18:08:02] "GET / HTTP/1.1" 200 1521 0.007282
+2025-02-24 20:08:10.30
+793b0674
+User
+iq-NiimI-wEpFKaJAAAC: Sending packet PING data None
+2025-02-24 20:08:10.30
+793b0674
+User
+INFO:engineio.server:iq-NiimI-wEpFKaJAAAC: Sending packet PING data None
+2025-02-24 20:08:10.47
+793b0674
+User
+iq-NiimI-wEpFKaJAAAC: Received packet PONG data
+2025-02-24 20:08:10.47
+793b0674
+User
+INFO:engineio.server:iq-NiimI-wEpFKaJAAAC: Received packet PONG data
+2025-02-24 20:08:11.11
+b17dda1b
+User
+(27) accepted ('127.0.0.1', 59732)
+2025-02-24 20:08:11.12
+b17dda1b
+User
+127.0.0.1 - - [24/Feb/2025 18:08:11] "GET / HTTP/1.1" 200 1521 0.006957
+2025-02-24 20:08:35.49
+793b0674
+User
+iq-NiimI-wEpFKaJAAAC: Sending packet PING data None
+2025-02-24 20:08:35.49
+793b0674
+User
+INFO:engineio.server:iq-NiimI-wEpFKaJAAAC: Sending packet PING data None
+2025-02-24 20:08:35.67
+793b0674
+User
+iq-NiimI-wEpFKaJAAAC: Received packet PONG data
+2025-02-24 20:08:35.67
+793b0674
+User
+INFO:engineio.server:iq-NiimI-wEpFKaJAAAC: Received packet PONG data
+2025-02-24 20:08:53.18
+793b0674
+User
+INFO:root:Client disconnected: transport close
+2025-02-24 20:08:53.18
+793b0674
+User
+34.123.114.182,127.0.0.1 - - [24/Feb/2025 18:08:53] "GET /socket.io/?EIO=4&transport=websocket&sid=iq-NiimI-wEpFKaJAAAC HTTP/1.1" 200 0 168.254898
+2025-02-24 20:08:53.19
+793b0674
+System
+system: received signal terminated
+2025-02-24 20:08:53.19
+793b0674
+System
+command finished with error [sh -c python main.py]: signal: terminated
+2025-02-24 20:08:53.24
+793b0674
+System
+main done, exiting
+2025-02-24 20:09:02.01
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.53.8,34.31.237.112,127.0.0.1 - - [24/Feb/2025 18:09:02] "GET / HTTP/1.1" 200 1521 0.000842
+2025-02-24 20:09:02.24
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.27.148,34.72.92.39,127.0.0.1 - - [24/Feb/2025 18:09:02] "GET /static/css/styles.css HTTP/1.1" 200 5265 0.013223
+2025-02-24 20:09:03.34
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.27.148,34.30.141.1,127.0.0.1 - - [24/Feb/2025 18:09:03] "GET /host HTTP/1.1" 200 5609 0.009318
+2025-02-24 20:09:03.52
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.27.157,34.31.237.112,127.0.0.1 - - [24/Feb/2025 18:09:03] "GET /static/css/styles.css HTTP/1.1" 304 211 0.001302
+2025-02-24 20:09:03.53
+b17dda1b
+User
+(30) accepted ('127.0.0.1', 37972)
+2025-02-24 20:09:03.53
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.27.151,34.30.141.1,127.0.0.1 - - [24/Feb/2025 18:09:03] "GET /static/js/host.js HTTP/1.1" 304 208 0.001525
+2025-02-24 20:09:03.73
+b17dda1b
+User
+rE1PQ971hLI01c8-AAAA: Sending packet OPEN data {'sid': 'rE1PQ971hLI01c8-AAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 20:09:03.73
+b17dda1b
+User
+INFO:engineio.server:rE1PQ971hLI01c8-AAAA: Sending packet OPEN data {'sid': 'rE1PQ971hLI01c8-AAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 20:09:03.73
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.53.8,34.30.141.1,127.0.0.1 - - [24/Feb/2025 18:09:03] "GET /socket.io/?EIO=4&transport=polling&t=PKv9VHD HTTP/1.1" 200 276 0.000674
+2025-02-24 20:09:03.92
+b17dda1b
+User
+rE1PQ971hLI01c8-AAAA: Received packet MESSAGE data 0
+2025-02-24 20:09:03.92
+b17dda1b
+User
+INFO:engineio.server:rE1PQ971hLI01c8-AAAA: Received packet MESSAGE data 0
+2025-02-24 20:09:03.92
+b17dda1b
+User
+INFO:root:Client connected
+2025-02-24 20:09:03.92
+b17dda1b
+User
+rE1PQ971hLI01c8-AAAA: Sending packet MESSAGE data 0{"sid":"DHHt9NJnlF8ndI-OAAAB"}
+2025-02-24 20:09:03.92
+b17dda1b
+User
+INFO:engineio.server:rE1PQ971hLI01c8-AAAA: Sending packet MESSAGE data 0{"sid":"DHHt9NJnlF8ndI-OAAAB"}
+2025-02-24 20:09:03.92
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.27.145,34.31.237.112,127.0.0.1 - - [24/Feb/2025 18:09:03] "POST /socket.io/?EIO=4&transport=polling&t=PKv9VKR&sid=rE1PQ971hLI01c8-AAAA HTTP/1.1" 200 204 0.002006
+2025-02-24 20:09:03.94
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.53.11,34.30.141.1,127.0.0.1 - - [24/Feb/2025 18:09:03] "GET /socket.io/?EIO=4&transport=polling&t=PKv9VKS&sid=rE1PQ971hLI01c8-AAAA HTTP/1.1" 200 189 0.000230
+2025-02-24 20:09:04.07
+b17dda1b
+User
+(30) accepted ('127.0.0.1', 37978)
+2025-02-24 20:09:04.07
+b17dda1b
+User
+rE1PQ971hLI01c8-AAAA: Received request to upgrade to websocket
+2025-02-24 20:09:04.07
+b17dda1b
+User
+INFO:engineio.server:rE1PQ971hLI01c8-AAAA: Received request to upgrade to websocket
+2025-02-24 20:09:04.12
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.27.157,34.30.141.1,127.0.0.1 - - [24/Feb/2025 18:09:04] "GET /socket.io/?EIO=4&transport=polling&t=PKv9VNa&sid=rE1PQ971hLI01c8-AAAA HTTP/1.1" 200 157 0.000213
+2025-02-24 20:09:04.30
+b17dda1b
+User
+77.137.71.56,34.117.33.233,35.191.53.8,34.31.237.112,127.0.0.1 - - [24/Feb/2025 18:09:04] "GET /socket.io/?EIO=4&transport=polling&t=PKv9VQM&sid=rE1PQ971hLI01c8-AAAA HTTP/1.1" 200 157 0.000347
+2025-02-24 20:09:04.47
+b17dda1b
+User
+rE1PQ971hLI01c8-AAAA: Upgrade to websocket
