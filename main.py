@@ -316,30 +316,14 @@ def start_answer_timer(game_code):
     active_games[game_code]['current_timer'] = timer
     active_games[game_code]['timer_end'] = datetime.now() + timedelta(seconds=60)
 
-def start_feedback_timer(game_code):
-    """Start a timer for the feedback stage. After 60 seconds, automatically proceed."""
-    def feedback_timer_callback():
-        if game_code in active_games and active_games[game_code]['phase'] == 'feedback':
-            # Clear current question and answers
-            active_games[game_code]['current_question'] = None
-            active_games[game_code]['submitted_answers'] = []
-            active_games[game_code]['phase'] = 'playing'
-
-            # Notify clients that feedback time is over
-            emit('feedback_ended', {}, room=game_code)
-
-    timer = threading.Timer(60.0, feedback_timer_callback)
-    timer.start()
-    active_games[game_code]['feedback_timer'] = timer
-    active_games[game_code]['feedback_timer_end'] = datetime.now() + timedelta(seconds=60)
-
 @socketio.on('connect')
 def handle_connect():
     logging.info('Client connected')
 
 @socketio.on('disconnect')
-def handle_disconnect():
-    logging.info('Client disconnected')
+def handle_disconnect(sid):
+    """Handle client disconnection."""
+    logging.info(f'Client disconnected: {sid}')
 
 @socketio.on('join_game_room')
 def handle_join_room(data):
@@ -355,34 +339,13 @@ def handle_start_game(data):
         active_games[game_code]['phase'] = 'playing'
         emit('game_started', {}, room=game_code)
 
-@socketio.on('skip_feedback')
-def handle_skip_feedback(data):
-    """Handle manual skipping of feedback stage by host."""
-    game_code = data['game_code']
-    if game_code in active_games:
-        # Cancel feedback timer if it exists
-        if 'feedback_timer' in active_games[game_code]:
-            active_games[game_code]['feedback_timer'].cancel()
-            active_games[game_code]['feedback_timer'] = None
-
-        # Clear current question and answers
-        active_games[game_code]['current_question'] = None
-        active_games[game_code]['submitted_answers'] = []
-        active_games[game_code]['phase'] = 'playing'
-
-        # Notify clients that feedback has been skipped
-        emit('feedback_ended', {}, room=game_code)
-
 @socketio.on('show_feedback')
 def handle_show_feedback(data):
     """Handle manual triggering of feedback stage."""
     game_code = data['game_code']
-    logging.info(f'Attempting to show feedback for game {game_code}')
-
     if game_code in active_games:
-        logging.info('Game found, proceeding with feedback')
-        # Cancel answer timer if it exists
-        if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer'] is not None:
+        # Cancel timer if it exists
+        if 'current_timer' in active_games[game_code]:
             active_games[game_code]['current_timer'].cancel()
             active_games[game_code]['current_timer'] = None
 
@@ -391,25 +354,11 @@ def handle_show_feedback(data):
 
         # Get all submitted answers
         submitted_answers = active_games[game_code].get('submitted_answers', [])
-        logging.info(f'Found {len(submitted_answers)} submitted answers')
 
-        # Start feedback timer
-        start_feedback_timer(game_code)
-
-        # Calculate remaining feedback time
-        remaining_feedback_time = 60  # Start with full time
-        if 'feedback_timer_end' in active_games[game_code]:
-            remaining_feedback_time = max(0, (active_games[game_code]['feedback_timer_end'] - datetime.now()).total_seconds())
-
-        # Emit feedback event with current answers and timer
+        # Emit feedback event with current answers
         emit('show_feedback', {
-            'answers': submitted_answers,
-            'feedback_timer': remaining_feedback_time,
-            'can_skip': True  # Add flag to indicate skip button should be shown
+            'answers': submitted_answers
         }, room=game_code)
-        logging.info('Feedback event emitted successfully')
-    else:
-        logging.error(f'Game {game_code} not found')
 
 @socketio.on('submit_answer')
 def handle_submit_answer(data):
@@ -457,8 +406,7 @@ def handle_broadcast_question(data):
         # Emit the new question with timer information
         emit('new_question', {
             **question_data,
-            'timer_duration': 60,
-            'show_feedback_button': True  # Add flag to show feedback button for host
+            'timer_duration': 60
         }, room=game_code)
 
 @socketio.on('answer_result')

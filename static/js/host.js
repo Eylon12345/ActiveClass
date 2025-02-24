@@ -38,7 +38,6 @@ class HostGame {
         this.newGameBtn = document.getElementById('newGame');
         this.explanationArea = document.getElementById('explanationArea');
         this.playerAnswersDisplay = document.getElementById('playerAnswers');
-        this.showFeedbackBtn = document.getElementById('showFeedback');
 
         this.setupEventListeners();
         this.setupSocketListeners();
@@ -57,7 +56,6 @@ class HostGame {
         this.startGameBtn.addEventListener('click', () => this.startGame());
         this.continueVideo.addEventListener('click', () => this.resumeVideo());
         this.newGameBtn.addEventListener('click', () => window.location.reload());
-        this.showFeedbackBtn.addEventListener('click', () => this.showFeedback());
     }
 
     setupSocketListeners() {
@@ -71,15 +69,6 @@ class HostGame {
 
         this.socket.on('answer_submitted', (data) => {
             this.handlePlayerAnswer(data.player_id, data.nickname, data.answer);
-        });
-
-        this.socket.on('show_feedback', (data) => {
-            console.log('Received show_feedback event:', data);
-            // Update the UI to show feedback stage
-            this.displayAnswerResults(data.answers);
-            // Show the continue button and hide the feedback button
-            this.showFeedbackBtn.classList.add('hidden');
-            this.continueVideo.classList.remove('hidden');
         });
     }
 
@@ -330,43 +319,54 @@ class HostGame {
         }
     }
 
-    displayAnswerResults(answers) {
+    displayAnswerResults(results) {
         this.playerAnswersDisplay.innerHTML = '';
 
         // First highlight the correct answer in the answer options
-        if (this.currentQuestion) {
-            const answerOptions = this.answerArea.querySelectorAll('.answer-option');
-            answerOptions.forEach(option => {
-                if (option.textContent === this.currentQuestion.correct_answer) {
-                    option.classList.add('correct');
-                }
-            });
-        }
+        const answerOptions = this.answerArea.querySelectorAll('.answer-option');
+        answerOptions.forEach(option => {
+            if (option.textContent === this.currentQuestion.correct_answer) {
+                option.classList.add('correct');
+            }
+        });
 
-        if (!answers || answers.length === 0) {
-            const noAnswersElement = document.createElement('div');
-            noAnswersElement.className = 'list-group-item';
-            noAnswersElement.textContent = 'No answers submitted yet';
-            this.playerAnswersDisplay.appendChild(noAnswersElement);
-            return;
-        }
-
-        answers.forEach(answer => {
-            const player = this.players.get(answer.player_id);
-            if (!player) return;
+        results.forEach(result => {
+            const player = this.players.get(result.player_id);
+            if (result.is_correct) {
+                player.score += 100;
+                this.players.set(result.player_id, player);
+            }
 
             const answerElement = document.createElement('div');
-            answerElement.className = 'list-group-item';
+            answerElement.className = `list-group-item ${result.is_correct ? 'correct' : 'incorrect'}`;
             answerElement.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <strong>${player.nickname}</strong>
-                        <div>${answer.answer}</div>
+                        <div>${result.answer}</div>
                     </div>
+                    <span class="badge ${result.is_correct ? 'bg-success' : 'bg-danger'}">
+                        ${result.is_correct ? 'Correct' : 'Incorrect'}
+                    </span>
                 </div>
             `;
             this.playerAnswersDisplay.appendChild(answerElement);
+
+            this.socket.emit('answer_result', {
+                game_code: this.gameCode,
+                player_id: result.player_id,
+                is_correct: result.is_correct,
+                explanation: result.explanation
+            });
         });
+
+        if (results.length > 0) {
+            this.explanationArea.textContent = results[0].explanation;
+            this.explanationArea.classList.remove('hidden');
+        }
+
+        this.updateScoreDisplay();
+        this.continueVideo.classList.remove('hidden');
     }
 
     resumeVideo() {
@@ -375,18 +375,6 @@ class HostGame {
         this.explanationArea.classList.add('hidden');
         this.isQuestionActive = false;
         this.player.playVideo();
-        this.showFeedbackBtn.classList.remove('hidden');
-        this.showFeedbackBtn.disabled = false;
-
-    }
-
-    showFeedback() {
-        console.log('Showing feedback for game:', this.gameCode);
-        if (this.gameCode) {
-            this.socket.emit('show_feedback', { game_code: this.gameCode });
-            // Disable the button to prevent multiple clicks
-            this.showFeedbackBtn.disabled = true;
-        }
     }
 }
 
