@@ -450,4 +450,16 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=port)
+
+    # Configure for production environment
+    debug = not os.getenv("RUNNING_IN_PRODUCTION", False)
+    use_reloader = not os.getenv("RUNNING_IN_PRODUCTION", False)
+
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=port,
+        debug=debug,
+        use_reloader=use_reloader,
+        log_output=True
+    )
