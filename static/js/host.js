@@ -72,6 +72,12 @@ class HostGame {
         this.socket.on('answer_submitted', (data) => {
             this.handlePlayerAnswer(data.player_id, data.nickname, data.answer);
         });
+
+        this.socket.on('show_feedback', (data) => {
+            if (data.answers && data.answers.length > 0) {
+                this.checkAllAnswers();
+            }
+        });
     }
 
     async createGame() {
@@ -374,6 +380,7 @@ class HostGame {
 
     showFeedbackEarly() {
         if (this.isQuestionActive && this.gameCode) {
+            console.log('Requesting early feedback');
             this.socket.emit('show_feedback', { game_code: this.gameCode });
             this.showFeedbackBtn.classList.add('hidden');
         }
