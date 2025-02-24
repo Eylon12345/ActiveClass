@@ -16,4 +16,5 @@ dependencies = [
     "youtube-transcript-api>=0.6.3",
     "pydantic>=2.10.6",
     "trafilatura>=2.0.0",
+    "gevent-websocket>=0.10.1",
 ]

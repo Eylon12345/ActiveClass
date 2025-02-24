@@ -1,3 +1,6 @@
+from gevent import monkey
+monkey.patch_all()
+
 import os
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
@@ -19,13 +22,17 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Configure SocketIO with gevent
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='gevent',
+    logger=True,
+    engineio_logger=True
+)
 
 logging.basicConfig(level=logging.DEBUG)
-
-# Initialize the OpenAI client
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Store active games in memory
 active_games = {}  # Add feedback_shown flag when creating new game
@@ -433,7 +440,19 @@ def handle_answer_result(data):
             'is_correct': is_correct
         }, room=game_code)
 
+# Initialize the OpenAI client
+# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
-    socketio.run(app, debug=True, host="0.0.0.0", port=port)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        debug=True,
+        use_reloader=True,
+        log_output=True
+    )
