@@ -38,6 +38,7 @@ class HostGame {
         this.newGameBtn = document.getElementById('newGame');
         this.explanationArea = document.getElementById('explanationArea');
         this.playerAnswersDisplay = document.getElementById('playerAnswers');
+        this.showFeedbackBtn = document.getElementById('showFeedback');
 
         this.setupEventListeners();
         this.setupSocketListeners();
@@ -56,6 +57,7 @@ class HostGame {
         this.startGameBtn.addEventListener('click', () => this.startGame());
         this.continueVideo.addEventListener('click', () => this.resumeVideo());
         this.newGameBtn.addEventListener('click', () => window.location.reload());
+        this.showFeedbackBtn.addEventListener('click', () => this.showFeedbackEarly());
     }
 
     setupSocketListeners() {
@@ -267,6 +269,7 @@ class HostGame {
             this.answerArea.appendChild(option);
         });
 
+        this.showFeedbackBtn.classList.remove('hidden');
         this.continueVideo.classList.add('hidden');
 
         this.socket.emit('broadcast_question', {
@@ -321,8 +324,8 @@ class HostGame {
 
     displayAnswerResults(results) {
         this.playerAnswersDisplay.innerHTML = '';
+        this.showFeedbackBtn.classList.add('hidden');
 
-        // First highlight the correct answer in the answer options
         const answerOptions = this.answerArea.querySelectorAll('.answer-option');
         answerOptions.forEach(option => {
             if (option.textContent === this.currentQuestion.correct_answer) {
@@ -367,6 +370,13 @@ class HostGame {
 
         this.updateScoreDisplay();
         this.continueVideo.classList.remove('hidden');
+    }
+
+    showFeedbackEarly() {
+        if (this.isQuestionActive && this.gameCode) {
+            this.socket.emit('show_feedback', { game_code: this.gameCode });
+            this.showFeedbackBtn.classList.add('hidden');
+        }
     }
 
     resumeVideo() {
