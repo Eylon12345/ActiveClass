@@ -1,0 +1,212 @@
+2025-02-24 18:22:13.39
+712ada4b
+User
+sys.exit(1)
+2025-02-24 18:22:13.39
+712ada4b
+User
+SystemExit: 1
+2025-02-24 18:22:13.39
+712ada4b
+User
+[2025-02-24 16:22:13 +0000] [31] [INFO] Worker exiting (pid: 31)
+2025-02-24 18:22:13.74
+712ada4b
+User
+[2025-02-24 16:22:13 +0000] [35] [INFO] Booting worker with pid: 35
+2025-02-24 18:22:15.79
+712ada4b
+User
+Server initialized for gevent.
+2025-02-24 18:22:15.79
+712ada4b
+User
+INFO:engineio.server:Server initialized for gevent.
+2025-02-24 18:22:15.86
+712ada4b
+User
+Invalid session 3I1kR8We9Ot4PgXvAAAA (further occurrences of this error will be logged with level INFO)
+2025-02-24 18:22:15.86
+712ada4b
+User
+ERROR:engineio.server:Invalid session 3I1kR8We9Ot4PgXvAAAA (further occurrences of this error will be logged with level INFO)
+2025-02-24 18:22:15.86
+712ada4b
+User
+Invalid session 3I1kR8We9Ot4PgXvAAAA
+2025-02-24 18:22:15.86
+712ada4b
+User
+INFO:engineio.server:Invalid session 3I1kR8We9Ot4PgXvAAAA
+2025-02-24 18:22:15.87
+712ada4b
+User
+_P692LASY8S2WXpdAAAA: Sending packet OPEN data {'sid': '_P692LASY8S2WXpdAAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 18:22:15.87
+712ada4b
+User
+INFO:engineio.server:_P692LASY8S2WXpdAAAA: Sending packet OPEN data {'sid': '_P692LASY8S2WXpdAAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 18:22:40.90
+712ada4b
+User
+_P692LASY8S2WXpdAAAA: Sending packet PING data None
+2025-02-24 18:22:40.90
+712ada4b
+User
+INFO:engineio.server:_P692LASY8S2WXpdAAAA: Sending packet PING data None
+2025-02-24 18:22:40.90
+712ada4b
+User
+_P692LASY8S2WXpdAAAA: Received packet MESSAGE data 0
+2025-02-24 18:22:40.90
+712ada4b
+User
+INFO:engineio.server:_P692LASY8S2WXpdAAAA: Received packet MESSAGE data 0
+2025-02-24 18:22:40.90
+712ada4b
+User
+INFO:root:Client connected
+2025-02-24 18:22:40.90
+712ada4b
+User
+_P692LASY8S2WXpdAAAA: Sending packet MESSAGE data 0{"sid":"nKtm3kXYIT83i5DSAAAB"}
+2025-02-24 18:22:40.90
+712ada4b
+User
+INFO:engineio.server:_P692LASY8S2WXpdAAAA: Sending packet MESSAGE data 0{"sid":"nKtm3kXYIT83i5DSAAAB"}
+2025-02-24 18:22:40.90
+712ada4b
+User
+_P692LASY8S2WXpdAAAA: Received request to upgrade to websocket
+2025-02-24 18:22:40.90
+712ada4b
+User
+INFO:engineio.server:_P692LASY8S2WXpdAAAA: Received request to upgrade to websocket
+2025-02-24 18:22:40.92
+712ada4b
+User
+[2025-02-24 16:22:40 +0000] [35] [ERROR] Error handling request /socket.io/?EIO=4&transport=websocket&sid=_P692LASY8S2WXpdAAAA
+2025-02-24 18:22:40.92
+712ada4b
+User
+Traceback (most recent call last):
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 134, in handle
+2025-02-24 18:22:40.92
+712ada4b
+User
+self.handle_request(listener, req, client, addr)
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 177, in handle_request
+2025-02-24 18:22:40.92
+712ada4b
+User
+respiter = self.wsgi(environ, resp.start_response)
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+2025-02-24 18:22:40.92
+712ada4b
+User
+return self.wsgi_app(environ, start_response)
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+2025-02-24 18:22:40.92
+712ada4b
+User
+return super().__call__(environ, start_response)
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+2025-02-24 18:22:40.92
+712ada4b
+User
+return self.engineio_app.handle_request(environ, start_response)
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+2025-02-24 18:22:40.92
+712ada4b
+User
+return self.eio.handle_request(environ, start_response)
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+2025-02-24 18:22:40.92
+712ada4b
+User
+packets = socket.handle_get_request(
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-24 18:22:40.92
+712ada4b
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-24 18:22:40.92
+712ada4b
+User
+return ws(environ, start_response)
+2025-02-24 18:22:40.92
+712ada4b
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:22:40.92
+712ada4b
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-24 18:22:40.92
+712ada4b
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-24 18:22:40.92
+712ada4b
+User
+RuntimeError: The gevent-websocket server is not configured appropriately. See the Deployment section of the documentation for more information.
+2025-02-24 18:22:41.11
+712ada4b
+User
+_P692LASY8S2WXpdAAAA: Received p
