@@ -52,6 +52,19 @@ body {
     font-weight: 400;
 }
 
+/* Form Controls */
+.form-control {
+    background-color: var(--background);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.form-control:focus {
+    background-color: var(--background);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.1);
+}
+
 /* Button Styles - shadcn inspired */
 .btn {
     height: var(--button-height);
@@ -95,10 +108,11 @@ body {
     color: var(--text-primary);
 }
 
-/* Existing styles */
+/* Game specific elements */
 #gameCode {
     font-size: 2rem;
     letter-spacing: 2px;
+    color: var(--text-primary);
 }
 
 #qrCode {
@@ -110,7 +124,7 @@ body {
 
 .video-container {
     height: 50vh;
-    background-color: var(--bs-gray-900);
+    background-color: #f3f4f6;
 }
 
 .video-container #player {
@@ -121,21 +135,25 @@ body {
 .player-item {
     padding: 0.5rem 1rem;
     margin-bottom: 0.5rem;
-    background-color: var(--bs-gray-800);
+    background-color: var(--background);
+    border: 1px solid var(--border-color);
     border-radius: 0.25rem;
+    color: var(--text-primary);
 }
 
 .answer-option {
     padding: 1rem;
     margin-bottom: 0.5rem;
-    background-color: var(--bs-gray-700);
+    background-color: var(--background);
+    border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     cursor: pointer;
     transition: background-color 0.2s;
+    color: var(--text-primary);
 }
 
 .answer-option:hover {
-    background-color: var(--bs-gray-600);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .answer-option.selected {
@@ -143,42 +161,44 @@ body {
 }
 
 .answer-option.correct {
-    background-color: var(--bs-success);
+    background-color: #10b981;
     color: white;
 }
 
 .answer-option.incorrect {
-    background-color: var(--bs-danger);
+    background-color: #ef4444;
     color: white;
 }
 
 #playerAnswers .list-group-item {
-    background-color: var(--bs-gray-800);
-    border-color: var(--bs-gray-700);
+    background-color: var(--background);
+    border: 1px solid var(--border-color);
     margin-bottom: 0.5rem;
+    color: var(--text-primary);
 }
 
 #playerAnswers .list-group-item.correct {
-    border-left: 4px solid var(--bs-success);
+    border-left: 4px solid #10b981;
 }
 
 #playerAnswers .list-group-item.incorrect {
-    border-left: 4px solid var(--bs-danger);
+    border-left: 4px solid #ef4444;
 }
 
 .feedback {
     text-align: center;
     padding: 1rem;
     border-radius: 0.5rem;
+    color: var(--text-primary);
 }
 
 .feedback.correct {
-    background-color: var(--bs-success);
+    background-color: #10b981;
     color: white;
 }
 
 .feedback.incorrect {
-    background-color: var(--bs-danger);
+    background-color: #ef4444;
     color: white;
 }
 
