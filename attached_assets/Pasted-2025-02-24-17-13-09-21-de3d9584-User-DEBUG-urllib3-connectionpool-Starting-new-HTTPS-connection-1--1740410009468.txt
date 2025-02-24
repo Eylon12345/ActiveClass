@@ -1,0 +1,112 @@
+2025-02-24 17:13:09.21
+de3d9584
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-24 17:13:09.24
+de3d9584
+User
+DEBUG:urllib3.connectionpool:https://www.youtube.com:443 "GET /watch?v=jjho5kWg8fw HTTP/1.1" 200 None
+2025-02-24 17:13:09.81
+de3d9584
+User
+INFO:root:Direct transcript failed:
+2025-02-24 17:13:09.81
+de3d9584
+User
+Could not retrieve a transcript for the video https://www.youtube.com/watch?v=jjho5kWg8fw! This is most likely caused by:
+2025-02-24 17:13:09.81
+de3d9584
+User
+2025-02-24 17:13:09.81
+de3d9584
+User
+Subtitles are disabled for this video
+2025-02-24 17:13:09.81
+de3d9584
+User
+2025-02-24 17:13:09.81
+de3d9584
+User
+If you are sure that the described cause is not responsible for this error and that a transcript should be retrievable, please create an issue at https://github.com/jdepoix/youtube-transcript-api/issues. Please add which version of youtube_transcript_api you are using and provide the information needed to replicate the error. Also make sure that there are no open issues which already describe your problem!
+2025-02-24 17:13:09.81
+de3d9584
+User
+INFO:root:Attempting auto-generated transcript retrieval
+2025-02-24 17:13:09.81
+de3d9584
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-24 17:13:09.87
+de3d9584
+User
+DEBUG:urllib3.connectionpool:https://www.youtube.com:443 "GET /watch?v=jjho5kWg8fw HTTP/1.1" 200 None
+2025-02-24 17:13:10.44
+de3d9584
+User
+INFO:root:Auto-generated transcript failed:
+2025-02-24 17:13:10.44
+de3d9584
+User
+Could not retrieve a transcript for the video https://www.youtube.com/watch?v=jjho5kWg8fw! This is most likely caused by:
+2025-02-24 17:13:10.44
+de3d9584
+User
+2025-02-24 17:13:10.44
+de3d9584
+User
+Subtitles are disabled for this video
+2025-02-24 17:13:10.44
+de3d9584
+User
+2025-02-24 17:13:10.44
+de3d9584
+User
+If you are sure that the described cause is not responsible for this error and that a transcript should be retrievable, please create an issue at https://github.com/jdepoix/youtube-transcript-api/issues. Please add which version of youtube_transcript_api you are using and provide the information needed to replicate the error. Also make sure that there are no open issues which already describe your problem!
+2025-02-24 17:13:10.44
+de3d9584
+User
+INFO:root:Attempting manual transcript retrieval with language specification
+2025-02-24 17:13:10.45
+de3d9584
+User
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): www.youtube.com:443
+2025-02-24 17:13:10.52
+de3d9584
+User
+DEBUG:urllib3.connectionpool:https://www.youtube.com:443 "GET /watch?v=jjho5kWg8fw HTTP/1.1" 200 None
+2025-02-24 17:13:10.97
+de3d9584
+User
+INFO:root:Manual transcript failed:
+2025-02-24 17:13:10.97
+de3d9584
+User
+Could not retrieve a transcript for the video https://www.youtube.com/watch?v=jjho5kWg8fw! This is most likely caused by:
+2025-02-24 17:13:10.97
+de3d9584
+User
+2025-02-24 17:13:10.97
+de3d9584
+User
+No transcripts were found for any of the requested language codes: ['en']
+2025-02-24 17:13:10.97
+de3d9584
+User
+2025-02-24 17:13:10.97
+de3d9584
+User
+For this video (jjho5kWg8fw) transcripts are available in the following languages:
+2025-02-24 17:13:10.97
+de3d9584
+User
+2025-02-24 17:13:10.97
+de3d9584
+User
+(MANUALLY CREATED)
+2025-02-24 17:13:10.97
+de3d9584
+User
+None
+2025-02-24 17:13:10.97
+de3d9584
+User
