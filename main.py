@@ -17,9 +17,14 @@ import threading
 from datetime import datetime, timedelta
 import os
 
-load_dotenv()
+# Initialize logging first
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
+# Load environment variables
+load_dotenv()
+
+# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 CORS(app)
@@ -35,6 +40,9 @@ socketio = SocketIO(
     ping_interval=25,
     manage_session=False
 )
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Store active games in memory
 active_games = {}  # Add feedback_shown flag when creating new game
@@ -442,21 +450,20 @@ def handle_answer_result(data):
             'is_correct': is_correct
         }, room=game_code)
 
-# Initialize the OpenAI client
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
-
 if __name__ == "__main__":
-    logging.info("Starting server with WebSocket support...")
+    logger.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
 
-    # Simple eventlet configuration
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=port,
-        debug=False,
-        use_reloader=False,
-        log_output=True
-    )
+    try:
+        # Simple eventlet configuration
+        socketio.run(
+            app,
+            host='0.0.0.0',
+            port=port,
+            debug=False,
+            use_reloader=False,
+            log_output=True
+        )
+    except Exception as e:
+        logger.error(f"Error starting server: {str(e)}")
+        raise
