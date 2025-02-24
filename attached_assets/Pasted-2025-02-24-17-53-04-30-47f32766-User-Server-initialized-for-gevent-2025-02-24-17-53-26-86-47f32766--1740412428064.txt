@@ -1,0 +1,164 @@
+2025-02-24 17:53:04.30
+47f32766
+User
+Server initialized for gevent.
+2025-02-24 17:53:26.86
+47f32766
+User
+n_p2tl-5C3sipm1-AAAA: Sending packet OPEN data {'sid': 'n_p2tl-5C3sipm1-AAAA', 'upgrades': ['websocket'], 'pingTimeout': 20000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 17:53:26.86
+47f32766
+User
+INFO:engineio.server:n_p2tl-5C3sipm1-AAAA: Sending packet OPEN data {'sid': 'n_p2tl-5C3sipm1-AAAA', 'upgrades': ['websocket'], 'pingTimeout': 20000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 17:53:27.05
+47f32766
+User
+n_p2tl-5C3sipm1-AAAA: Received packet MESSAGE data 0
+2025-02-24 17:53:27.05
+47f32766
+User
+INFO:engineio.server:n_p2tl-5C3sipm1-AAAA: Received packet MESSAGE data 0
+2025-02-24 17:53:27.05
+47f32766
+User
+INFO:root:Client connected
+2025-02-24 17:53:27.05
+47f32766
+User
+n_p2tl-5C3sipm1-AAAA: Sending packet MESSAGE data 0{"sid":"T9biIzMPBHMmgG9sAAAB"}
+2025-02-24 17:53:27.05
+47f32766
+User
+INFO:engineio.server:n_p2tl-5C3sipm1-AAAA: Sending packet MESSAGE data 0{"sid":"T9biIzMPBHMmgG9sAAAB"}
+2025-02-24 17:53:27.24
+47f32766
+User
+n_p2tl-5C3sipm1-AAAA: Received request to upgrade to websocket
+2025-02-24 17:53:27.24
+47f32766
+User
+INFO:engineio.server:n_p2tl-5C3sipm1-AAAA: Received request to upgrade to websocket
+2025-02-24 17:53:27.25
+47f32766
+User
+[2025-02-24 15:53:27 +0000] [29] [ERROR] Error handling request /socket.io/?EIO=4&transport=websocket&sid=n_p2tl-5C3sipm1-AAAA
+2025-02-24 17:53:27.25
+47f32766
+User
+Traceback (most recent call last):
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 134, in handle
+2025-02-24 17:53:27.25
+47f32766
+User
+self.handle_request(listener, req, client, addr)
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 177, in handle_request
+2025-02-24 17:53:27.25
+47f32766
+User
+respiter = self.wsgi(environ, resp.start_response)
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+2025-02-24 17:53:27.25
+47f32766
+User
+return self.wsgi_app(environ, start_response)
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+2025-02-24 17:53:27.25
+47f32766
+User
+return super().__call__(environ, start_response)
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+2025-02-24 17:53:27.25
+47f32766
+User
+return self.engineio_app.handle_request(environ, start_response)
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+2025-02-24 17:53:27.25
+47f32766
+User
+return self.eio.handle_request(environ, start_response)
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+2025-02-24 17:53:27.25
+47f32766
+User
+packets = socket.handle_get_request(
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-24 17:53:27.25
+47f32766
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-24 17:53:27.25
+47f32766
+User
+return ws(environ, start_response)
+2025-02-24 17:53:27.25
+47f32766
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 17:53:27.25
+47f32766
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-24 17:53:27.25
+47f32766
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-24 17:53:27.25
+47f32766
+User
+RuntimeError: The gevent-websocket server is not configured appropriately.

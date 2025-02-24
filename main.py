@@ -18,6 +18,7 @@ import threading
 from datetime import datetime, timedelta
 
 load_dotenv()
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
@@ -29,10 +30,11 @@ socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode='gevent',
     logger=True,
-    engineio_logger=True
+    engineio_logger=True,
+    ping_timeout=60,
+    ping_interval=25,
+    manage_session=False  # Disable session handling to avoid conflicts
 )
-
-logging.basicConfig(level=logging.DEBUG)
 
 # Store active games in memory
 active_games = {}  # Add feedback_shown flag when creating new game
