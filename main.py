@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.DEBUG)
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Store active games in memory
-active_games = {}
+active_games = {}  # Add feedback_shown flag when creating new game
 
 class ReflectionClosedQuestion(BaseModel):
     question: str
@@ -140,7 +140,6 @@ def create_game():
 
         logging.info(f"Creating game for video ID: {video_id}")
 
-        # Try to get a sample transcript to verify it works
         test_transcript = get_transcript_segment(video_id, 10)
         if test_transcript is None:
             return jsonify({
@@ -158,6 +157,7 @@ def create_game():
             'players': {},
             'current_question': None,
             'phase': 'lobby',
+            'feedback_shown': False,  # Add this flag
             'settings': {
                 'question_type': 'closed',
                 'difficulty': '6'
@@ -349,8 +349,9 @@ def handle_show_feedback(data):
             active_games[game_code]['current_timer'].cancel()
             active_games[game_code]['current_timer'] = None
 
-        # Change phase to feedback
+        # Change phase to feedback and set feedback flag
         active_games[game_code]['phase'] = 'feedback'
+        active_games[game_code]['feedback_shown'] = True  # Set feedback flag
 
         # Get all submitted answers
         submitted_answers = active_games[game_code].get('submitted_answers', [])
@@ -367,6 +368,13 @@ def handle_submit_answer(data):
     answer = data['answer']
 
     if game_code in active_games and player_id in active_games[game_code]['players']:
+        # Check if feedback has been shown
+        if active_games[game_code].get('feedback_shown', False):
+            emit('answer_rejected', {
+                'reason': 'Feedback has already been shown'
+            }, room=request.sid)
+            return
+
         # Store the answer
         if 'submitted_answers' not in active_games[game_code]:
             active_games[game_code]['submitted_answers'] = []
@@ -395,10 +403,11 @@ def handle_broadcast_question(data):
     question_data = data['question']
 
     if game_code in active_games:
-        # Reset submitted answers
+        # Reset submitted answers and feedback flag
         active_games[game_code]['submitted_answers'] = []
         active_games[game_code]['phase'] = 'answering'
         active_games[game_code]['current_question'] = question_data
+        active_games[game_code]['feedback_shown'] = False  # Reset feedback flag
 
         # Start the timer
         start_answer_timer(game_code)

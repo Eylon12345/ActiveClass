@@ -84,6 +84,11 @@ class PlayerGame {
                 this.showAnswerResult(data.is_correct);
             }
         });
+
+        // Add new event handler for rejected answers
+        this.socket.on('answer_rejected', (data) => {
+            this.showRejectedAnswer(data.reason);
+        });
     }
 
     async joinGame() {
@@ -171,6 +176,19 @@ class PlayerGame {
         this.feedback.textContent = isCorrect ? 'Correct!' : 'Incorrect!';
         this.feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
         this.feedback.classList.remove('hidden');
+    }
+
+    showRejectedAnswer(reason) {
+        this.feedback.textContent = reason;
+        this.feedback.className = 'alert alert-warning';
+        this.feedback.classList.remove('hidden');
+
+        // Disable all answer options
+        const options = this.answerArea.querySelectorAll('.answer-option');
+        options.forEach(option => {
+            option.style.pointerEvents = 'none';
+            option.classList.add('disabled');
+        });
     }
 
     showResults() {
