@@ -1,0 +1,136 @@
+2025-02-24 18:28:25.12
+718b53dc
+System
+starting up user application
+2025-02-24 18:28:25.38
+718b53dc
+System
+forwarding local port 5000 to external port 80
+2025-02-24 18:28:26.04
+718b53dc
+User
+[2025-02-24 16:28:26 +0000] [25] [INFO] Starting gunicorn 23.0.0
+2025-02-24 18:28:26.04
+718b53dc
+User
+[2025-02-24 16:28:26 +0000] [25] [INFO] Listening at: http://0.0.0.0:5000 (25)
+2025-02-24 18:28:26.04
+718b53dc
+User
+[2025-02-24 16:28:26 +0000] [25] [INFO] Using worker: sync
+2025-02-24 18:28:26.04
+718b53dc
+User
+[2025-02-24 16:28:26 +0000] [33] [INFO] Booting worker with pid: 33
+2025-02-24 18:28:33.60
+718b53dc
+User
+Server initialized for gevent.
+2025-02-24 18:28:33.60
+718b53dc
+User
+INFO:engineio.server:Server initialized for gevent.
+2025-02-24 18:29:55.14
+712ada4b
+System
+system: received signal terminated
+2025-02-24 18:29:55.14
+712ada4b
+User
+[2025-02-24 16:29:55 +0000] [26] [INFO] Handling signal: term
+2025-02-24 18:29:55.14
+712ada4b
+User
+[2025-02-24 16:29:55 +0000] [31] [INFO] Worker exiting (pid: 31)
+2025-02-24 18:29:55.44
+712ada4b
+User
+[2025-02-24 16:29:55 +0000] [26] [INFO] Shutting down: Master
+2025-02-24 18:29:55.47
+712ada4b
+System
+command finished successfully with exit code 0
+2025-02-24 18:29:55.47
+712ada4b
+System
+main done, exiting
+2025-02-24 18:32:34.15
+712ada4b
+System
+system: received signal terminated
+2025-02-24 18:32:34.15
+712ada4b
+User
+[2025-02-24 16:32:34 +0000] [26] [INFO] Handling signal: term
+2025-02-24 18:32:34.16
+712ada4b
+User
+[2025-02-24 16:32:34 +0000] [36] [INFO] Worker exiting (pid: 36)
+2025-02-24 18:32:34.46
+712ada4b
+User
+[2025-02-24 16:32:34 +0000] [26] [INFO] Shutting down: Master
+2025-02-24 18:32:34.49
+712ada4b
+System
+command finished successfully with exit code 0
+2025-02-24 18:32:34.49
+712ada4b
+System
+main done, exiting
+2025-02-24 18:34:34.48
+69fb0465
+System
+starting up user application
+2025-02-24 18:34:34.80
+69fb0465
+System
+forwarding local port 5000 to external port 80
+2025-02-24 18:34:35.75
+69fb0465
+User
+[2025-02-24 16:34:35 +0000] [26] [INFO] Starting gunicorn 23.0.0
+2025-02-24 18:34:35.75
+69fb0465
+User
+[2025-02-24 16:34:35 +0000] [26] [INFO] Listening at: http://0.0.0.0:5000 (26)
+2025-02-24 18:34:35.75
+69fb0465
+User
+[2025-02-24 16:34:35 +0000] [26] [INFO] Using worker: sync
+2025-02-24 18:34:35.76
+69fb0465
+User
+[2025-02-24 16:34:35 +0000] [33] [INFO] Booting worker with pid: 33
+2025-02-24 18:34:43.79
+69fb0465
+User
+Server initialized for gevent.
+2025-02-24 18:34:43.79
+69fb0465
+User
+INFO:engineio.server:Server initialized for gevent.
+2025-02-24 18:38:00.45
+718b53dc
+User
+[2025-02-24 16:38:00 +0000] [25] [INFO] Handling signal: term
+2025-02-24 18:38:00.45
+718b53dc
+System
+system: received signal terminated
+2025-02-24 18:38:00.45
+718b53dc
+User
+[2025-02-24 16:38:00 +0000] [33] [INFO] Worker exiting (pid: 33)
+2025-02-24 18:38:00.75
+718b53dc
+User
+[2025-02-24 16:38:00 +0000] [25] [INFO] Shutting down: Master
+2025-02-24 18:38:00.77
+718b53dc
+System
+command finished successfully with exit code 0
+2025-02-24 18:38:00.77
+718b53dc
+System
+main done, exiting
