@@ -456,25 +456,13 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
 
     try:
-        if os.environ.get("RUNNING_IN_PRODUCTION"):
-            # Let Gunicorn handle the server
-            socketio.run(
-                app,
-                host="0.0.0.0",
-                port=port,
-                debug=False, #Set to False in production
-                use_reloader=False, #Set to False in production
-                log_output=True,
-                worker_class='geventwebsocket.gunicorn.workers.GeventWebSocketWorker'  # Explicitly set worker class
-            )
-        else:
-            # Run with gevent-websocket in development
-            server = WSGIServer(
-                ('0.0.0.0', port),
-                app,
-                handler_class=WebSocketHandler
-            )
-            logging.info(f"Server starting on port {port}")
-            server.serve_forever()
+        # Run with gevent-websocket in development
+        server = WSGIServer(
+            ('0.0.0.0', port),
+            app,
+            handler_class=WebSocketHandler
+        )
+        logging.info(f"Server starting on port {port}")
+        server.serve_forever()
     except Exception as e:
         logging.exception(f"A critical error occurred: {str(e)}")
