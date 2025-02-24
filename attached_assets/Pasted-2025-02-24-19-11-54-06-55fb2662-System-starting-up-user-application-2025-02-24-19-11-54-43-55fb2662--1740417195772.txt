@@ -1,0 +1,128 @@
+2025-02-24 19:11:54.06
+55fb2662
+System
+starting up user application
+2025-02-24 19:11:54.43
+55fb2662
+System
+forwarding local port 5000 to external port 80
+2025-02-24 19:12:05.64
+55fb2662
+User
+Server initialized for eventlet.
+2025-02-24 19:12:05.64
+55fb2662
+User
+INFO:engineio.server:Server initialized for eventlet.
+2025-02-24 19:12:06.17
+55fb2662
+User
+INFO:root:Starting server with WebSocket support...
+2025-02-24 19:12:06.17
+55fb2662
+User
+(25) wsgi starting up on http://0.0.0.0:5000
+2025-02-24 19:12:06.43
+55fb2662
+User
+(25) accepted ('127.0.0.1', 37898)
+2025-02-24 19:12:06.44
+55fb2662
+User
+127.0.0.1 - - [24/Feb/2025 17:12:06] "GET / HTTP/1.1" 200 1844 0.009601
+2025-02-24 19:12:27.79
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.15.216,34.132.172.131,127.0.0.1 - - [24/Feb/2025 17:12:27] "GET / HTTP/1.1" 200 1844 0.001670
+2025-02-24 19:12:27.98
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.15.219,34.132.172.131,127.0.0.1 - - [24/Feb/2025 17:12:27] "GET /static/css/styles.css HTTP/1.1" 304 211 0.011430
+2025-02-24 19:12:28.01
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.102,34.132.172.131,127.0.0.1 - - [24/Feb/2025 17:12:28] "GET /static/css/styles.css HTTP/1.1" 304 211 0.003741
+2025-02-24 19:12:45.36
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.96,34.132.172.131,127.0.0.1 - - [24/Feb/2025 17:12:45] "GET / HTTP/1.1" 200 1844 0.000962
+2025-02-24 19:12:45.62
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.105,34.55.171.223,127.0.0.1 - - [24/Feb/2025 17:12:45] "GET /static/css/styles.css HTTP/1.1" 304 211 0.001361
+2025-02-24 19:12:49.16
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.96,34.55.171.223,127.0.0.1 - - [24/Feb/2025 17:12:49] "GET /host HTTP/1.1" 200 5609 0.006401
+2025-02-24 19:12:49.36
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.105,34.132.172.131,127.0.0.1 - - [24/Feb/2025 17:12:49] "GET /static/css/styles.css HTTP/1.1" 304 211 0.001503
+2025-02-24 19:12:49.36
+55fb2662
+User
+(25) accepted ('127.0.0.1', 49810)
+2025-02-24 19:12:49.37
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.108,34.55.171.223,127.0.0.1 - - [24/Feb/2025 17:12:49] "GET /static/js/host.js HTTP/1.1" 304 208 0.002982
+2025-02-24 19:12:49.72
+55fb2662
+User
+PkWKWPsCaZCQhV07AAAA: Sending packet OPEN data {'sid': 'PkWKWPsCaZCQhV07AAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 19:12:49.72
+55fb2662
+User
+INFO:engineio.server:PkWKWPsCaZCQhV07AAAA: Sending packet OPEN data {'sid': 'PkWKWPsCaZCQhV07AAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 19:12:49.72
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.15.219,34.55.171.223,127.0.0.1 - - [24/Feb/2025 17:12:49] "GET /socket.io/?EIO=4&transport=polling&t=PKuydXm HTTP/1.1" 200 276 0.000976
+2025-02-24 19:12:49.96
+55fb2662
+User
+PkWKWPsCaZCQhV07AAAA: Received packet MESSAGE data 0
+2025-02-24 19:12:49.96
+55fb2662
+User
+INFO:engineio.server:PkWKWPsCaZCQhV07AAAA: Received packet MESSAGE data 0
+2025-02-24 19:12:49.97
+55fb2662
+User
+INFO:root:Client connected
+2025-02-24 19:12:49.97
+55fb2662
+User
+PkWKWPsCaZCQhV07AAAA: Sending packet MESSAGE data 0{"sid":"IuchoqG3rud245QRAAAB"}
+2025-02-24 19:12:49.97
+55fb2662
+User
+INFO:engineio.server:PkWKWPsCaZCQhV07AAAA: Sending packet MESSAGE data 0{"sid":"IuchoqG3rud245QRAAAB"}
+2025-02-24 19:12:49.97
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.99,34.55.171.223,127.0.0.1 - - [24/Feb/2025 17:12:49] "POST /socket.io/?EIO=4&transport=polling&t=PKuydbG&sid=PkWKWPsCaZCQhV07AAAA HTTP/1.1" 200 204 0.001827
+2025-02-24 19:12:49.98
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.15.216,34.132.172.131,127.0.0.1 - - [24/Feb/2025 17:12:49] "GET /socket.io/?EIO=4&transport=polling&t=PKuydbH&sid=PkWKWPsCaZCQhV07AAAA HTTP/1.1" 200 189 0.000244
+2025-02-24 19:12:50.22
+55fb2662
+User
+(25) accepted ('127.0.0.1', 49826)
+2025-02-24 19:12:50.23
+55fb2662
+User
+PkWKWPsCaZCQhV07AAAA: Received request to upgrade to websocket
+2025-02-24 19:12:50.23
+55fb2662
+User
+INFO:engineio.server:PkWKWPsCaZCQhV07AAAA: Received request to upgrade to websocket
+2025-02-24 19:12:50.43
+55fb2662
+User
+77.137.71.56,34.117.33.233,35.191.38.96,34.55.171.223,127.0.0.1 - - [24/Feb/2025 17:12:50] "GET /socket.io/?EIO=4&transport=polling&t=PKuydfE&sid=PkWKWPsCaZCQhV07AAAA HTTP/1.1" 200 157 0.249253
+2025-02-24 19:12:50.65
+55fb2662
+User
+PkWKWPsCaZCQhV07AAAA: Upgrade to websocke
