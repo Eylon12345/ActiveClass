@@ -8,30 +8,23 @@
     <link href="/static/css/styles.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container min-vh-100 d-flex flex-column justify-content-center align-items-center">
-        <div class="text-center mb-5">
-            <h1 class="display-4 mb-4">YouTube Quiz Game</h1>
-            <p class="lead mb-5">Create or join an AI-powered quiz game based on YouTube videos!</p>
-        </div>
-        
-        <div class="row w-100 justify-content-center">
-            <div class="col-md-5 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">Host a Game</h3>
-                        <p class="card-text">Create a new game and share it with friends</p>
-                        <a href="/host" class="btn btn-primary btn-lg">Host Game</a>
-                    </div>
+    <div class="min-vh-100 d-flex align-items-center justify-content-center p-4" style="background-color: var(--bs-body-bg);">
+        <div class="card w-100" style="max-width: 28rem;">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h1 class="card-title display-6 mb-2">ActiveClass Quiz Game</h1>
+                    <p class="card-description mb-0">
+                        Create or join an interactive quiz game based on YouTube videos
+                    </p>
                 </div>
-            </div>
-            
-            <div class="col-md-5 mb-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <h3 class="card-title">Join a Game</h3>
-                        <p class="card-text">Enter a game code to join an existing game</p>
-                        <a href="/join" class="btn btn-secondary btn-lg">Join Game</a>
-                    </div>
+
+                <div class="space-y-4">
+                    <a href="/host" class="btn btn-primary btn-lg w-100">
+                        Host a Game
+                    </a>
+                    <a href="/join" class="btn btn-outline-primary btn-lg w-100">
+                        Join a Game
+                    </a>
                 </div>
             </div>
         </div>

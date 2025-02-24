@@ -1,15 +1,79 @@
 /* General Styles */
+:root {
+    --primary-color: #0070f3;
+    --card-border-radius: 0.75rem;
+    --button-height: 2.5rem;
+}
+
 .hidden {
     display: none !important;
 }
 
-/* Game Code Display */
+/* Card Styles - shadcn inspired */
+.card {
+    background-color: var(--bs-body-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--card-border-radius);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+}
+
+.card-description {
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+/* Button Styles - shadcn inspired */
+.btn {
+    height: var(--button-height);
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-lg {
+    height: calc(var(--button-height) + 0.5rem);
+    padding: 0 1.5rem;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #0061d6;
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+/* Existing styles */
 #gameCode {
     font-size: 2rem;
     letter-spacing: 2px;
 }
 
-/* QR Code Container */
 #qrCode {
     background-color: white;
     padding: 1rem;
@@ -17,7 +81,6 @@
     border-radius: 0.5rem;
 }
 
-/* Video Container */
 .video-container {
     height: 50vh;
     background-color: var(--bs-gray-900);
@@ -28,7 +91,6 @@
     height: 100%;
 }
 
-/* Player List */
 .player-item {
     padding: 0.5rem 1rem;
     margin-bottom: 0.5rem;
@@ -36,7 +98,6 @@
     border-radius: 0.25rem;
 }
 
-/* Answer Options */
 .answer-option {
     padding: 1rem;
     margin-bottom: 0.5rem;
@@ -51,7 +112,7 @@
 }
 
 .answer-option.selected {
-    border: 2px solid var(--bs-primary);
+    border: 2px solid var(--primary-color);
 }
 
 .answer-option.correct {
@@ -64,7 +125,6 @@
     color: white;
 }
 
-/* Player Answers */
 #playerAnswers .list-group-item {
     background-color: var(--bs-gray-800);
     border-color: var(--bs-gray-700);
@@ -79,7 +139,6 @@
     border-left: 4px solid var(--bs-danger);
 }
 
-/* Feedback Messages */
 .feedback {
     text-align: center;
     padding: 1rem;
@@ -94,6 +153,11 @@
 .feedback.incorrect {
     background-color: var(--bs-danger);
     color: white;
+}
+
+/* Spacing utilities */
+.space-y-4 > * + * {
+    margin-top: 1rem;
 }
 
 /* Animations */
