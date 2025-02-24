@@ -1,0 +1,168 @@
+2025-02-24 18:16:16.83
+b1a48f5f
+User
+INFO:engineio.server:9aPPJzwiVy1ilHRuAAAA: Received request to upgrade to websocket
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+[2025-02-24 16:16:16 +0000] [35] [ERROR] Error handling request /socket.io/?EIO=4&transport=websocket&sid=9aPPJzwiVy1ilHRuAAAA
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+Traceback (most recent call last):
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 134, in handle
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+self.handle_request(listener, req, client, addr)
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 177, in handle_request
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+respiter = self.wsgi(environ, resp.start_response)
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+return self.wsgi_app(environ, start_response)
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+return super().__call__(environ, start_response)
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+return self.engineio_app.handle_request(environ, start_response)
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+return self.eio.handle_request(environ, start_response)
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+packets = socket.handle_get_request(
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+return ws(environ, start_response)
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+RuntimeError: The gevent-websocket server is not configured appropriately. See the Deployment section of the documentation for more information.
+2025-02-24 18:16:16.84
+b1a48f5f
+System
+system: received signal terminated
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+[2025-02-24 16:16:16 +0000] [28] [INFO] Handling signal: term
+2025-02-24 18:16:16.84
+b1a48f5f
+User
+[2025-02-24 16:16:16 +0000] [35] [INFO] Worker exiting (pid: 35)
+2025-02-24 18:16:17.04
+34afc8d3
+User
+Invalid session 9aPPJzwiVy1ilHRuAAAA (further occurrences of this error will be logged with level INFO)
+2025-02-24 18:16:17.04
+34afc8d3
+User
+ERROR:engineio.server:Invalid session 9aPPJzwiVy1ilHRuAAAA (further occurrences of this error will be logged with level INFO)
+2025-02-24 18:16:17.05
+34afc8d3
+User
+Invalid session 9aPPJzwiVy1ilHRuAAAA
+2025-02-24 18:16:17.05
+34afc8d3
+User
+INFO:engineio.server:Invalid session 9aPPJzwiVy1ilHRuAAAA
+2025-02-24 18:16:17.14
+b1a48f5f
+User
+[2025-02-24 16:16:17 +0000] [28] [INFO] Shutting down: Master
+2025-02-24 18:16:17.18
+b1a48f5f
+System
+command finished successfully with exit code 0
+2025-02-24 18:16:17.18
+b1a48f5f
+System
+main done, exiting
