@@ -202,6 +202,35 @@ body {
     color: white;
 }
 
+/* Bootstrap overrides for light theme */
+.badge {
+    color: var(--text-primary);
+    background-color: #e5e7eb;
+}
+
+.badge.bg-primary {
+    color: white;
+    background-color: var(--primary-color) !important;
+}
+
+.badge.bg-secondary {
+    color: var(--text-primary);
+    background-color: #f3f4f6 !important;
+    border: 1px solid var(--border-color);
+}
+
+.alert {
+    color: var(--text-primary);
+    background-color: var(--background);
+    border: 1px solid var(--border-color);
+}
+
+.alert-info {
+    color: #0070f3;
+    background-color: rgba(0, 112, 243, 0.1);
+    border-color: rgba(0, 112, 243, 0.2);
+}
+
 /* Spacing utilities */
 .space-y-4 > * + * {
     margin-top: 1rem;
