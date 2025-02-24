@@ -11,11 +11,12 @@ dependencies = [
     "gunicorn>=21.2.0",
     "openai>=1.63.2",
     "psycopg2-binary>=2.9.10",
-    "flask-socketio>=5.0.0",
+    "flask-socketio>=5.3.6",
     "python-dotenv>=1.0.1",
     "youtube-transcript-api>=0.6.3",
     "pydantic>=2.10.6",
     "trafilatura>=2.0.0",
     "gevent-websocket==0.10.1",
     "gevent>=23.9.1",
+    "eventlet>=0.33.3",
 ]

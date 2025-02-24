@@ -1,9 +1,6 @@
-from gevent import monkey
-monkey.patch_all()
+import eventlet
+eventlet.monkey_patch()
 
-from geventwebsocket.handler import WebSocketHandler
-from gevent.pywsgi import WSGIServer
-import os
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
@@ -18,6 +15,7 @@ import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import threading
 from datetime import datetime, timedelta
+import os
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
@@ -26,16 +24,16 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 CORS(app)
 
-# Configure SocketIO with gevent
+# Configure SocketIO with eventlet
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode='gevent',
+    async_mode='eventlet',
     logger=True,
     engineio_logger=True,
     ping_timeout=60,
     ping_interval=25,
-    manage_session=False  # Disable session handling to avoid conflicts
+    manage_session=False
 )
 
 # Store active games in memory
@@ -452,16 +450,12 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
     port = int(os.getenv("PORT", 5000))
-    debug_mode = os.environ.get('FLASK_ENV') == 'development' #Check for development mode
 
-    try:
-        socketio.run(
-            app,
-            host='0.0.0.0',
-            port=port,
-            debug=debug_mode,
-            use_reloader=not debug_mode, #Use reloader only in development
-            log_output=True
-        )
-    except Exception as e:
-        logging.exception(f"A critical error occurred: {str(e)}")
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=port,
+        debug=False,
+        use_reloader=False,
+        log_output=True
+    )

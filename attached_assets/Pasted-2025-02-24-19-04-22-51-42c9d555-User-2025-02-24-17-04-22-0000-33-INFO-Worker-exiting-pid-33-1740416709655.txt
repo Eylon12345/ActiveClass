@@ -1,0 +1,212 @@
+2025-02-24 19:04:22.51
+42c9d555
+User
+[2025-02-24 17:04:22 +0000] [33] [INFO] Worker exiting (pid: 33)
+2025-02-24 19:04:22.81
+42c9d555
+User
+[2025-02-24 17:04:22 +0000] [25] [INFO] Shutting down: Master
+2025-02-24 19:04:22.84
+42c9d555
+System
+command finished successfully with exit code 0
+2025-02-24 19:04:22.84
+42c9d555
+System
+main done, exiting
+2025-02-24 19:04:22.92
+faa402d8
+User
+Invalid session r6eyaZepWeOUO7O2AAAA (further occurrences of this error will be logged with level INFO)
+2025-02-24 19:04:22.92
+faa402d8
+User
+ERROR:engineio.server:Invalid session r6eyaZepWeOUO7O2AAAA (further occurrences of this error will be logged with level INFO)
+2025-02-24 19:04:22.99
+faa402d8
+User
+Invalid session r6eyaZepWeOUO7O2AAAA
+2025-02-24 19:04:22.99
+faa402d8
+User
+INFO:engineio.server:Invalid session r6eyaZepWeOUO7O2AAAA
+2025-02-24 19:04:23.26
+faa402d8
+User
+Invalid session r6eyaZepWeOUO7O2AAAA
+2025-02-24 19:04:23.26
+faa402d8
+User
+INFO:engineio.server:Invalid session r6eyaZepWeOUO7O2AAAA
+2025-02-24 19:04:24.99
+faa402d8
+User
+CmSAVd321JwojXC2AAAA: Sending packet OPEN data {'sid': 'CmSAVd321JwojXC2AAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 19:04:24.99
+faa402d8
+User
+INFO:engineio.server:CmSAVd321JwojXC2AAAA: Sending packet OPEN data {'sid': 'CmSAVd321JwojXC2AAAA', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-24 19:04:25.39
+faa402d8
+User
+CmSAVd321JwojXC2AAAA: Received packet MESSAGE data 0
+2025-02-24 19:04:25.39
+faa402d8
+User
+INFO:engineio.server:CmSAVd321JwojXC2AAAA: Received packet MESSAGE data 0
+2025-02-24 19:04:25.39
+faa402d8
+User
+INFO:root:Client connected
+2025-02-24 19:04:25.39
+faa402d8
+User
+CmSAVd321JwojXC2AAAA: Sending packet MESSAGE data 0{"sid":"zevg3bnjCo_gwJ-KAAAB"}
+2025-02-24 19:04:25.39
+faa402d8
+User
+INFO:engineio.server:CmSAVd321JwojXC2AAAA: Sending packet MESSAGE data 0{"sid":"zevg3bnjCo_gwJ-KAAAB"}
+2025-02-24 19:04:25.54
+faa402d8
+User
+CmSAVd321JwojXC2AAAA: Received request to upgrade to websocket
+2025-02-24 19:04:25.54
+faa402d8
+User
+INFO:engineio.server:CmSAVd321JwojXC2AAAA: Received request to upgrade to websocket
+2025-02-24 19:04:25.58
+faa402d8
+User
+[2025-02-24 17:04:25 +0000] [33] [ERROR] Error handling request /socket.io/?EIO=4&transport=websocket&sid=CmSAVd321JwojXC2AAAA
+2025-02-24 19:04:25.58
+faa402d8
+User
+Traceback (most recent call last):
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 135, in handle
+2025-02-24 19:04:25.58
+faa402d8
+User
+self.handle_request(listener, req, client, addr)
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 178, in handle_request
+2025-02-24 19:04:25.58
+faa402d8
+User
+respiter = self.wsgi(environ, resp.start_response)
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+2025-02-24 19:04:25.58
+faa402d8
+User
+return self.wsgi_app(environ, start_response)
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+2025-02-24 19:04:25.58
+faa402d8
+User
+return super().__call__(environ, start_response)
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+2025-02-24 19:04:25.58
+faa402d8
+User
+return self.engineio_app.handle_request(environ, start_response)
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+2025-02-24 19:04:25.58
+faa402d8
+User
+return self.eio.handle_request(environ, start_response)
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+2025-02-24 19:04:25.58
+faa402d8
+User
+packets = socket.handle_get_request(
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-24 19:04:25.58
+faa402d8
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-24 19:04:25.58
+faa402d8
+User
+return ws(environ, start_response)
+2025-02-24 19:04:25.58
+faa402d8
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 19:04:25.58
+faa402d8
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-24 19:04:25.58
+faa402d8
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-24 19:04:25.58
+faa402d8
+User
+RuntimeError: The gevent-websocket server is not configured appropriately. See the Deployment section of the documentation for more information.
+2025-02-24 19:04:50.02
+faa402d8
+User
+CmSAVd321JwojXC2AAAA: Sending packet PING data None
+2025-02-24 19:04:50.02
+faa402d8
+User
+INFO:engineio.server:CmSAVd321JwojXC2AAAA: Sending packet PING data None
+2025-02-24 19:04:50.77
+faa402d8
+User
+CmSAVd321JwojXC2AAAA: Received p
