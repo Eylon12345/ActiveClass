@@ -1,0 +1,152 @@
+2025-02-24 18:00:09.82
+36a2af4c
+User
+XQXqmjPDrYw_0azSAAAC: Sending packet PING data None
+2025-02-24 18:00:09.82
+36a2af4c
+User
+INFO:engineio.server:XQXqmjPDrYw_0azSAAAC: Sending packet PING data None
+2025-02-24 18:01:14.13
+36a2af4c
+User
+XQXqmjPDrYw_0azSAAAC: Client is gone, closing socket
+2025-02-24 18:01:14.13
+36a2af4c
+User
+INFO:engineio.server:XQXqmjPDrYw_0azSAAAC: Client is gone, closing socket
+2025-02-24 18:01:14.13
+36a2af4c
+User
+INFO:root:Client disconnected: ping timeout
+2025-02-24 18:01:14.13
+36a2af4c
+User
+XQXqmjPDrYw_0azSAAAC: Client is gone, closing socket
+2025-02-24 18:01:14.13
+36a2af4c
+User
+INFO:engineio.server:XQXqmjPDrYw_0azSAAAC: Client is gone, closing socket
+2025-02-24 18:01:16.70
+36a2af4c
+User
+return super().__call__(environ, start_response)
+2025-02-24 18:01:16.70
+36a2af4c
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:01:16.70
+36a2af4c
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+2025-02-24 18:01:16.70
+36a2af4c
+User
+return self.engineio_app.handle_request(environ, start_response)
+2025-02-24 18:01:16.70
+36a2af4c
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:01:16.70
+36a2af4c
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+2025-02-24 18:01:16.70
+36a2af4c
+User
+return self.eio.handle_request(environ, start_response)
+2025-02-24 18:01:16.70
+36a2af4c
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:01:16.70
+36a2af4c
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+2025-02-24 18:01:16.70
+36a2af4c
+User
+packets = socket.handle_get_request(
+2025-02-24 18:01:16.70
+36a2af4c
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:01:16.70
+36a2af4c
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+2025-02-24 18:01:16.70
+36a2af4c
+User
+return getattr(self, '_upgrade_' + transport)(environ,
+2025-02-24 18:01:16.70
+36a2af4c
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:01:16.70
+36a2af4c
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+2025-02-24 18:01:16.70
+36a2af4c
+User
+return ws(environ, start_response)
+2025-02-24 18:01:16.70
+36a2af4c
+User
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-02-24 18:01:16.70
+36a2af4c
+User
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/gevent.py", line 54, in __call__
+2025-02-24 18:01:16.70
+36a2af4c
+User
+raise RuntimeError('The gevent-websocket server is not '
+2025-02-24 18:01:16.70
+36a2af4c
+User
+RuntimeError: The gevent-websocket server is not configured appropriately. See the Deployment section of the documentation for more information.
+2025-02-24 18:01:35.99
+a17e9d4a
+System
+starting up user application
+2025-02-24 18:01:36.28
+a17e9d4a
+System
+forwarding local port 5000 to external port 80
+2025-02-24 18:01:37.41
+a17e9d4a
+User
+[2025-02-24 16:01:37 +0000] [25] [INFO] Starting gunicorn 23.0.0
+2025-02-24 18:01:37.41
+a17e9d4a
+User
+[2025-02-24 16:01:37 +0000] [25] [INFO] Listening at: http://0.0.0.0:5000 (25)
+2025-02-24 18:01:37.41
+a17e9d4a
+User
+[2025-02-24 16:01:37 +0000] [25] [INFO] Using worker: sync
+2025-02-24 18:01:37.42
+a17e9d4a
+User
+[2025-02-24 16:01:37 +0000] [30] [INFO] Booting worker with pid: 30
+2025-02-24 18:01:41.32
+36a2af4c
+User
+DXOa4gxjjXBtvCYjAAAE: Sending packet PING data None
+2025-02-24 18:01:41.32
+36a2af4c
+User
+INFO:engineio.server:DXOa4gxjjXBtvCYjAAAE: Sending packet PING data None
+2025-02-24 18:01:46.59
+a17e9d4a
+User
+Server initialized for gevent.
+2025-02-24 18:01:46.59
+a17e9d4a
+User
+INFO:engineio.server:Server initialized for gevent.
+2025-02-24 18:01:47.44
+a17e9d4a
+System
+starting up user application

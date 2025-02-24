@@ -1,6 +1,8 @@
 from gevent import monkey
 monkey.patch_all()
 
+from geventwebsocket.handler import WebSocketHandler
+from gevent.pywsgi import WSGIServer
 import os
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
@@ -33,7 +35,9 @@ socketio = SocketIO(
     engineio_logger=True,
     ping_timeout=60,
     ping_interval=25,
-    manage_session=False  # Disable session handling to avoid conflicts
+    manage_session=False,  # Disable session handling to avoid conflicts
+    wsgi_server=WSGIServer,  # Explicitly set WSGI server
+    websocket_handler=WebSocketHandler  # Explicitly set WebSocket handler
 )
 
 # Store active games in memory
