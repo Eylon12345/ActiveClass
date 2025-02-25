@@ -230,7 +230,7 @@ def generate_question():
         if question_type == "closed":
             grade_prompt = f"Create questions suitable for {grade_level}th grade students. " if grade_level != "1" else "Create questions suitable for 1st grade students. "
             completion = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4-1106-preview",  # Use the stable model version
                 messages=[
                     {
                         "role": "system",
@@ -274,7 +274,7 @@ def check_answer():
         results = []
         for answer_data in answers:
             completion = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4-1106-preview",
                 messages=[
                     {
                         "role": "system",
@@ -442,10 +442,16 @@ def handle_answer_result(data):
             'is_correct': is_correct
         }, room=game_code)
 
-# Initialize the OpenAI client
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
+# Initialize the OpenAI client with proper error handling
+try:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+    client = OpenAI(api_key=api_key)
+    logging.info("OpenAI client initialized successfully")
+except Exception as e:
+    logging.error(f"Failed to initialize OpenAI client: {str(e)}")
+    client = None
 
 if __name__ == "__main__":
     logging.info("Starting server with WebSocket support...")
@@ -456,7 +462,7 @@ if __name__ == "__main__":
         app,
         host='0.0.0.0',
         port=port,
-        debug=False,
+        debug=True,  # Enable debug mode for better error messages
         use_reloader=False,
         log_output=True
     )
