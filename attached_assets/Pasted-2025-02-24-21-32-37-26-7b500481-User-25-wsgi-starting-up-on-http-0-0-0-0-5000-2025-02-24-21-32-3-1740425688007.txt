@@ -1,0 +1,132 @@
+2025-02-24 21:32:37.26
+7b500481
+User
+(25) wsgi starting up on http://0.0.0.0:5000
+2025-02-24 21:32:38.04
+7b500481
+User
+(25) accepted ('127.0.0.1', 56342)
+2025-02-24 21:32:38.06
+7b500481
+User
+127.0.0.1 - - [24/Feb/2025 19:32:38] "GET / HTTP/1.1" 200 1844 0.012573
+2025-02-24 21:32:41.54
+7b500481
+User
+Server initialized for eventlet.
+2025-02-24 21:32:41.54
+7b500481
+User
+INFO:engineio.server:Server initialized for eventlet.
+2025-02-24 21:32:41.90
+7b500481
+User
+INFO:root:Starting server with WebSocket support...
+2025-02-24 21:32:41.90
+7b500481
+User
+(28) wsgi starting up on http://0.0.0.0:5000
+2025-02-24 21:32:42.11
+7b500481
+User
+(28) accepted ('127.0.0.1', 50300)
+2025-02-24 21:32:42.11
+7b500481
+User
+127.0.0.1 - - [24/Feb/2025 19:32:42] "GET / HTTP/1.1" 200 1844 0.006575
+2025-02-24 21:32:48.47
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:32:48.47
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:32:48.63
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:32:48.63
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:33:13.64
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:33:13.64
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:33:13.80
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:33:13.80
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:33:38.82
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:33:38.82
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:33:38.99
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:33:38.99
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:34:04.00
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:34:04.00
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Sending packet PING data None
+2025-02-24 21:34:04.17
+635e2266
+User
+AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:34:04.17
+635e2266
+User
+INFO:engineio.server:AFzWhCdJXHrAX5xkAAAG: Received packet PONG data
+2025-02-24 21:34:11.24
+7b500481
+User
+(25) accepted ('127.0.0.1', 46652)
+2025-02-24 21:34:11.24
+7b500481
+User
+77.137.71.56,34.117.33.233,35.191.10.232,34.72.92.39,127.0.0.1 - - [24/Feb/2025 19:34:11] "GET / HTTP/1.1" 200 1844 0.000854
+2025-02-24 21:34:11.50
+7b500481
+User
+77.137.71.56,34.117.33.233,35.191.12.205,35.193.50.36,127.0.0.1 - - [24/Feb/2025 19:34:11] "GET /static/css/styles.css HTTP/1.1" 304 211 0.008403
+2025-02-24 21:34:12.81
+635e2266
+User
+INFO:root:Client disconnected: transport close
+2025-02-24 21:34:12.81
+635e2266
+User
+34.31.237.112,127.0.0.1 - - [24/Feb/2025 19:34:12] "GET /socket.io/?EIO=4&transport=websocket&sid=AFzWhCdJXHrAX5xkAAAG HTTP/1.1" 200 0 109.038527
+2025-02-24 21:34:12.81
+635e2266
+System
+system: received signal terminated
+2025-02-24 21:34:12.82
+635e2266
+System
+command finished with error [sh -c python main.py]: signal: terminated
+2025-02-24 21:34:12.83
+635e2266
+System
+main done, exiting

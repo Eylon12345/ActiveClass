@@ -1,0 +1,172 @@
+2025-02-25 21:44:17.64
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:44:17.64
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:44:17.81
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:44:17.81
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:44:42.83
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:44:42.83
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:44:43.00
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:44:43.00
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:45:08.02
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:45:08.02
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:45:08.19
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:45:08.19
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:45:33.20
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:45:33.20
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:45:33.37
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:45:33.37
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:45:58.39
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:45:58.39
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:45:58.55
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:45:58.55
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:46:23.56
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:46:23.56
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:46:23.73
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:46:23.73
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:46:48.74
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:46:48.74
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Sending packet PING data None
+2025-02-25 21:46:48.91
+7b500481
+User
+Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:46:48.91
+7b500481
+User
+INFO:engineio.server:Boee5ui2QfxyPPr2AAAW: Received packet PONG data
+2025-02-25 21:47:13.23
+7b500481
+User
+INFO:root:Client disconnected: transport close
+2025-02-25 21:47:13.23
+7b500481
+User
+34.132.172.131,127.0.0.1 - - [25/Feb/2025 19:47:13] "GET /socket.io/?EIO=4&transport=websocket&sid=Boee5ui2QfxyPPr2AAAW HTTP/1.1" 200 0 300.999563
+2025-02-25 21:47:14.90
+7b500481
+User
+(25) accepted ('127.0.0.1', 51356)
+2025-02-25 21:47:14.90
+7b500481
+User
+Q0r0nfHEDzZ-JZeKAAAY: Sending packet OPEN data {'sid': 'Q0r0nfHEDzZ-JZeKAAAY', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-25 21:47:14.90
+7b500481
+User
+INFO:engineio.server:Q0r0nfHEDzZ-JZeKAAAY: Sending packet OPEN data {'sid': 'Q0r0nfHEDzZ-JZeKAAAY', 'upgrades': ['websocket'], 'pingTimeout': 60000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-02-25 21:47:14.90
+7b500481
+User
+77.137.71.56,34.117.33.233,130.211.1.77,34.132.172.131,127.0.0.1 - - [25/Feb/2025 19:47:14] "GET /socket.io/?EIO=4&transport=polling&t=PK-fZFO HTTP/1.1" 200 276 0.000486
+2025-02-25 21:47:15.12
+7b500481
+User
+Q0r0nfHEDzZ-JZeKAAAY: Received packet MESSAGE data 0
+2025-02-25 21:47:15.12
+7b500481
+User
+INFO:engineio.server:Q0r0nfHEDzZ-JZeKAAAY: Received packet MESSAGE data 0
+2025-02-25 21:47:15.12
+7b500481
+User
+INFO:root:Client connected
+2025-02-25 21:47:15.12
+7b500481
+User
+Q0r0nfHEDzZ-JZeKAAAY: Sending packet MESSAGE data 0{"sid":"Znm9qK5C0alvYZP4AAAZ"}
+2025-02-25 21:47:15.12
+7b500481
+User
+INFO:engineio.server:Q0r0nfHEDzZ-JZeKAAAY: Sending packet MESSAGE data 0{"sid":"Znm9qK5C0alvYZP4AAAZ"}
+2025-02-25 21:47:15.12
+7b500481
+User
+77.137.71.56,34.117.33.233,35.191.15.128,34.72.92.39,127.0.0.1 - - [25/Feb/2025 19:47:15] "POST /socket.io/?EIO=4&transport=polling&t=PK-fZK1&sid=Q0r0nfHEDzZ-JZeKAAAY HTTP/1.1" 200 204 0.001167
+2025-02-25 21:47:15.12
+7b500481
+User
+77.137.71.56,34.117.33.233,35.191.15.134,34.72.92.39,127.0.0.1 - - [25/Feb/2025 19:47:15] "GET /socket.io/?EIO=4&transport=polling&t=PK-fZK2&sid=Q0r0nfHEDzZ-JZeKAAAY HTTP/1.1" 200 189 0.000291
+2025-02-25 21:47:15.21
+7b500481
+User
+(25) accepted ('127.0.0.1', 51360)
+2025-02-25 21:47:15.21
+7b500481
+User
+Q0r0nfHEDzZ-JZeKAAAY: Received request to upgrade to websocket
