@@ -43,6 +43,12 @@ class HostGame {
         this.showFeedbackBtn = document.getElementById('showFeedback');
         this.languageToggle = document.getElementById('languageToggle');
 
+        // Debug QR Code library loading
+        console.log('QRCode library loaded:', typeof QRCode !== 'undefined');
+
+        // Debug language toggle
+        console.log('Language toggle element found:', !!this.languageToggle);
+
         this.setupEventListeners();
         this.setupSocketListeners();
         this.initYouTubeAPI();
@@ -62,11 +68,23 @@ class HostGame {
         this.newGameBtn.addEventListener('click', () => window.location.reload());
         this.showFeedbackBtn.addEventListener('click', () => this.showFeedbackEarly());
 
-        // Add language toggle event
+        // Add language toggle event with immediate visual feedback
         if (this.languageToggle) {
-            this.languageToggle.addEventListener('change', async () => {
-                this.isHebrewActive = this.languageToggle.checked;
-                await this.updateUILanguage();
+            console.log('Setting up language toggle event listener');
+
+            // Add a prominent style to make the toggle more visible
+            this.languageToggle.parentElement.style.border = '2px solid #007bff';
+            this.languageToggle.parentElement.style.padding = '8px';
+            this.languageToggle.parentElement.style.borderRadius = '8px';
+
+            this.languageToggle.addEventListener('change', (e) => {
+                console.log('Language toggle changed:', e.target.checked);
+                this.isHebrewActive = e.target.checked;
+
+                // Show immediate feedback
+                alert(e.target.checked ? 'Switching to Hebrew...' : 'Switching to English...');
+
+                this.updateUILanguage();
             });
         }
     }
@@ -81,6 +99,7 @@ class HostGame {
         }
 
         try {
+            console.log('Translating text:', text.substring(0, 30) + '...');
             const response = await fetch('/api/translate', {
                 method: 'POST',
                 headers: {
@@ -94,10 +113,12 @@ class HostGame {
 
             const data = await response.json();
             if (data.success) {
+                console.log('Translation successful');
                 // Store in cache
                 this.translationCache.set(text, data.translated);
                 return data.translated;
             }
+            console.error('Translation failed:', data.error);
             return text;
         } catch (error) {
             console.error('Translation error:', error);
@@ -107,12 +128,20 @@ class HostGame {
 
     // Update all UI elements based on selected language
     async updateUILanguage() {
+        console.log('Updating UI language, Hebrew active:', this.isHebrewActive);
+
         // Update static UI elements based on language
         if (this.isHebrewActive) {
             // Apply RTL direction for Hebrew
             document.body.classList.add('hebrew-active');
             document.querySelectorAll('.card-body, .card-title, p, h1, h2, h3, h4, h5, h6, .answer-option')
                 .forEach(el => el.classList.add('hebrew-active'));
+
+            // Show language indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'alert alert-info mt-2';
+            indicator.textContent = 'מצב עברית פעיל';
+            document.querySelector('.form-check').appendChild(indicator);
 
             // Translate static UI elements to Hebrew
             document.querySelector('title').textContent = await this.translateText('Host Game - YouTube Quiz');
@@ -138,6 +167,12 @@ class HostGame {
             // Remove RTL direction when switching back to English
             document.body.classList.remove('hebrew-active');
             document.querySelectorAll('.hebrew-active').forEach(el => el.classList.remove('hebrew-active'));
+
+            // Remove language indicator if exists
+            const indicator = document.querySelector('.form-check .alert');
+            if (indicator) {
+                indicator.remove();
+            }
 
             // Reload page to restore English text
             if (this.translationCache.size > 0) {
@@ -236,29 +271,62 @@ class HostGame {
         this.gameInfo.classList.remove('hidden');
         this.gameCodeDisplay.textContent = this.gameCode;
 
+        // Generate QR code with enhanced visibility and error handling
         try {
             const joinUrl = `${window.location.origin}/join?code=${this.gameCode}`;
             const qrCodeElement = document.getElementById('qrCode');
-            qrCodeElement.innerHTML = '';
 
-            // Ensure we use the proper QRCode library method
-            if (typeof QRCode === 'function') {
-                new QRCode(qrCodeElement, {
-                    text: joinUrl,
-                    width: 128,
-                    height: 128,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
+            // Clear QR code container
+            if (qrCodeElement) {
+                qrCodeElement.innerHTML = '';
+                console.log('QR code container cleared');
+
+                // Make the QR code container visually distinct
+                qrCodeElement.style.border = '3px solid #007bff';
+                qrCodeElement.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+
+                console.log('Generating QR code for URL:', joinUrl);
+
+                // Check if QRCode is available
+                if (typeof QRCode === 'function') {
+                    console.log('QRCode constructor is available');
+
+                    // Create new QR code with higher error correction
+                    const qr = new QRCode(qrCodeElement, {
+                        text: joinUrl,
+                        width: 150,
+                        height: 150,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+
+                    console.log('QR code created with dimensions:', qrCodeElement.offsetWidth, 'x', qrCodeElement.offsetHeight);
+
+                    // Add direct link below QR code
+                    const joinLinkElement = document.createElement('div');
+                    joinLinkElement.className = 'mt-2 text-center';
+                    joinLinkElement.innerHTML = `<strong>Join URL:</strong><br><a href="${joinUrl}" target="_blank">${joinUrl}</a>`;
+                    qrCodeElement.appendChild(joinLinkElement);
+                } else {
+                    console.error('QRCode library not properly loaded');
+                    qrCodeElement.innerHTML = `
+                        <div class="alert alert-warning">QR Code not available</div>
+                        <div class="mt-2">Join URL: <a href="${joinUrl}" target="_blank">${joinUrl}</a></div>
+                    `;
+                }
             } else {
-                console.error('QRCode library not properly loaded');
-                qrCodeElement.innerHTML = `<p>Join URL: <a href="${joinUrl}">${joinUrl}</a></p>`;
+                console.error('QR code container not found');
             }
         } catch (error) {
             console.error('Error generating QR code:', error);
-            document.getElementById('qrCode').innerHTML =
-                `<p>Join URL: <a href="/join?code=${this.gameCode}">/join?code=${this.gameCode}</a></p>`;
+            const qrCodeElement = document.getElementById('qrCode');
+            if (qrCodeElement) {
+                qrCodeElement.innerHTML = `
+                    <div class="alert alert-danger">Error generating QR code</div>
+                    <div>Join URL: <a href="/join?code=${this.gameCode}" target="_blank">/join?code=${this.gameCode}</a></div>
+                `;
+            }
         }
 
         this.socket.emit('join_game_room', { game_code: this.gameCode });
@@ -543,6 +611,14 @@ class HostGame {
     }
 }
 
+// Initialize when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing HostGame');
+
+    // Add a global alert to notify user about features
+    setTimeout(() => {
+        alert('Welcome! This game has two special features:\n\n1. QR Code: Look for it when you create a game\n2. Hebrew Translation: Use the toggle switch in the top-right corner');
+    }, 1000);
+
     new HostGame();
 });

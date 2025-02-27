@@ -6,6 +6,8 @@
     <title>Host Game - YouTube Quiz</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="/static/css/styles.css" rel="stylesheet">
+    <!-- Pre-load QR code library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
 </head>
 <body>
@@ -57,7 +59,7 @@
                         <h4 class="mb-0">Game Code: <span id="gameCode" class="badge bg-primary"></span></h4>
                     </div>
                     <div class="col-auto">
-                        <div id="qrCode"></div>
+                        <div id="qrCode" class="bg-white p-2 rounded" style="min-width: 150px; min-height: 150px; display: block; border: 2px solid #000;"></div>
                     </div>
                     <div class="col-auto">
                         <div class="text-end">
@@ -121,8 +123,9 @@
         </div>
     </div>
 
+    <!-- YouTube API -->
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode.js"></script>
+    <!-- Application code -->
     <script src="/static/js/host.js"></script>
 </body>
 </html>

@@ -49,10 +49,14 @@ class PlayerGame {
 
         // Add language toggle event
         if (this.languageToggle) {
-            this.languageToggle.addEventListener('change', async () => {
-                this.isHebrewActive = this.languageToggle.checked;
+            console.log('Setting up language toggle event listener for join page');
+            this.languageToggle.addEventListener('change', async (e) => {
+                console.log('Language toggle changed:', e.target.checked);
+                this.isHebrewActive = e.target.checked;
                 await this.updateUILanguage();
             });
+        } else {
+            console.error('Language toggle element not found on join page');
         }
     }
 
@@ -66,6 +70,7 @@ class PlayerGame {
         }
 
         try {
+            console.log('Translating text (join):', text.substring(0, 30) + '...');
             const response = await fetch('/api/translate', {
                 method: 'POST',
                 headers: {
@@ -79,25 +84,35 @@ class PlayerGame {
 
             const data = await response.json();
             if (data.success) {
+                console.log('Translation successful (join)');
                 // Store in cache
                 this.translationCache.set(text, data.translated);
                 return data.translated;
             }
+            console.error('Translation failed (join):', data.error);
             return text;
         } catch (error) {
-            console.error('Translation error:', error);
+            console.error('Translation error (join):', error);
             return text;
         }
     }
 
     // Update all UI elements based on selected language
     async updateUILanguage() {
+        console.log('Updating UI language on join page, Hebrew active:', this.isHebrewActive);
+
         // Update static UI elements based on language
         if (this.isHebrewActive) {
             // Apply RTL direction for Hebrew
             document.body.classList.add('hebrew-active');
             document.querySelectorAll('.card-body, .card-title, p, h1, h2, h3, h4, h5, h6, .answer-option')
                 .forEach(el => el.classList.add('hebrew-active'));
+
+            // Show language indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'alert alert-info mt-2';
+            indicator.textContent = 'מצב עברית פעיל';
+            document.querySelector('.form-check').appendChild(indicator);
 
             // Translate static UI elements to Hebrew
             document.querySelector('title').textContent = await this.translateText('Join Game - YouTube Quiz');
@@ -124,6 +139,12 @@ class PlayerGame {
             // Remove RTL direction when switching back to English
             document.body.classList.remove('hebrew-active');
             document.querySelectorAll('.hebrew-active').forEach(el => el.classList.remove('hebrew-active'));
+
+            // Remove language indicator if exists
+            const indicator = document.querySelector('.form-check .alert');
+            if (indicator) {
+                indicator.remove();
+            }
 
             // Reload page to restore English text
             if (this.translationCache.size > 0) {
@@ -387,5 +408,6 @@ class PlayerGame {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing PlayerGame');
     new PlayerGame();
 });

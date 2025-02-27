@@ -324,6 +324,8 @@ def translate_text():
         if not text:
             return jsonify({"success": False, "error": "No text provided"}), 400
 
+        logging.info(f"Translation request received for text: {text[:50]}... to {target_language}")
+
         # Use OpenAI to translate the text
         completion = client.chat.completions.create(
             model="gpt-4o",
@@ -340,6 +342,7 @@ def translate_text():
         )
 
         translated_text = completion.choices[0].message.content
+        logging.info(f"Translation successful. Result: {translated_text[:50]}...")
 
         return jsonify({
             "success": True,
