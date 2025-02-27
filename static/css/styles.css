@@ -3,6 +3,11 @@
     display: none !important;
 }
 
+/* RTL Support for Hebrew */
+[dir="rtl"] {
+    text-align: right;
+}
+
 /* Game Code Display */
 #gameCode {
     font-size: 2rem;
@@ -104,6 +109,18 @@
 
 .fade-in {
     animation: fadeIn 0.3s ease-in;
+}
+
+/* Language Switch Styles */
+.form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* RTL support for specific elements when Hebrew is active */
+.hebrew-active {
+    direction: rtl;
+    text-align: right;
 }
 
 /* Responsive Adjustments */

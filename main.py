@@ -313,6 +313,43 @@ def check_answer():
         logging.error(f"Error checking answers: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+# Add the translation endpoint after line 314 (after the check_answer route)
+
+@app.route("/api/translate", methods=["POST"])
+def translate_text():
+    try:
+        text = request.json.get("text")
+        target_language = request.json.get("target_language", "hebrew")
+
+        if not text:
+            return jsonify({"success": False, "error": "No text provided"}), 400
+
+        # Use OpenAI to translate the text
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"You are a professional translator. Translate the following text to {target_language}. Keep any special formatting and HTML intact. Only translate the actual text content."
+                },
+                {
+                    "role": "user",
+                    "content": text
+                }
+            ]
+        )
+
+        translated_text = completion.choices[0].message.content
+
+        return jsonify({
+            "success": True,
+            "original": text,
+            "translated": translated_text
+        })
+    except Exception as e:
+        logging.error(f"Error translating text: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # Socket.IO event handlers
 def start_answer_timer(game_code):
     """Start a timer for the current question. After 60 seconds, trigger feedback."""
