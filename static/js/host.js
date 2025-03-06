@@ -18,6 +18,7 @@ class HostGame {
         this.usedTimestamps = new Set(); // Track used timestamps for questions
         this.questionInterval = 2; // Default: generate questions every 2 minutes
         this.questionType = 3; // Default: balanced question type (1-5 scale)
+        this.feedbackAttempts = 0; // Track feedback attempts for retry logic
 
         // DOM Elements
         this.setupPhase = document.getElementById('setupPhase');
@@ -273,6 +274,20 @@ class HostGame {
             console.log('Connected to server');
         });
 
+        this.socket.on('disconnect', () => {
+            console.log('Disconnected from server - attempting to reconnect...');
+            // Socket.io will automatically try to reconnect
+        });
+
+        this.socket.on('reconnect', () => {
+            console.log('Reconnected to server');
+            // Rejoin the game room if we were in one
+            if (this.gameCode) {
+                this.socket.emit('join_game_room', { game_code: this.gameCode });
+                console.log('Rejoined game room after reconnection:', this.gameCode);
+            }
+        });
+
         this.socket.on('player_joined', (data) => {
             this.addPlayer(data.player_id, data.nickname);
         });
@@ -282,9 +297,20 @@ class HostGame {
         });
 
         this.socket.on('show_feedback', (data) => {
+            console.log('Received show_feedback event:', data);
             if (data.answers && data.answers.length > 0) {
+                // Reset the feedback attempts counter
+                this.feedbackAttempts = 0;
                 this.checkAllAnswers();
+            } else {
+                console.warn('Received empty answers in show_feedback event');
             }
+        });
+
+        this.socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            // Show error to user
+            alert('A connection error occurred. Please refresh the page.');
         });
     }
 
@@ -471,7 +497,8 @@ class HostGame {
         }
 
         if (event.data === YT.PlayerState.PLAYING && !this.isQuestionActive) {
-            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 1000);
+            // Check more frequently (every 250ms) to ensure we catch the exact time point
+            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 250);
         }
     }
 
@@ -480,39 +507,60 @@ class HostGame {
             return;
         }
 
-        const currentTime = Math.floor(this.player.getCurrentTime());
+        // Get current time with higher precision
+        const currentTime = this.player.getCurrentTime();
 
-        // Only generate questions at full minute marks (60, 120, 180, etc.)
-        // And pre-fetch 10 seconds before to ensure question is ready
-        const isApproachingFullMinute = currentTime % (this.questionInterval * 60) >= 50 && currentTime >= 60;
-        const nextIntervalTime = Math.ceil(currentTime / (this.questionInterval * 60)) * (this.questionInterval * 60);
+        // Calculate interval boundaries based on the chosen question interval (in minutes)
+        const intervalInSeconds = this.questionInterval * 60;
 
-        // Check if we've already used this minute segment
-        const intervalKey = Math.floor(currentTime / (this.questionInterval * 60));
-        const alreadyUsed = this.usedTimestamps.has(intervalKey);
+        // Calculate the exact time of the next interval point
+        const nextIntervalTime = Math.ceil(currentTime / intervalInSeconds) * intervalInSeconds;
 
-        // Pre-fetch the question if we're approaching a full minute and haven't used this segment yet
-        if (isApproachingFullMinute && !this.nextQuestionData && !alreadyUsed) {
-            console.log(`Pre-fetching question for interval ${intervalKey} at time ${currentTime}`);
-            // Use the previous time segment as the content window
-            const contentStartTime = Math.max(0, nextIntervalTime - (this.questionInterval * 60));
-            const contentEndTime = nextIntervalTime;
+        // Time to the next interval point (in seconds)
+        const timeToNextInterval = nextIntervalTime - currentTime;
 
-            this.nextQuestionData = await this.fetchQuestion(
-                contentStartTime,  // Start of previous interval 
-                contentEndTime     // End of previous interval
-            );
+        // Calculate current interval ID to track used intervals
+        const currentIntervalId = Math.floor(currentTime / intervalInSeconds);
+
+        // Log detailed timing information for debugging
+        if (currentTime % 5 < 0.25) { // Log every ~5 seconds
+            console.log(`Current time: ${currentTime.toFixed(2)}s, Next interval: ${nextIntervalTime}s, Time to next: ${timeToNextInterval.toFixed(2)}s, Current interval ID: ${currentIntervalId}`);
         }
 
-        // Show the question when we hit a full interval and we have pre-fetched data
-        if (currentTime >= nextIntervalTime && this.nextQuestionData && !alreadyUsed) {
-            console.log(`Showing question at interval ${intervalKey} (time: ${currentTime})`);
+        // For 1-minute intervals, we want to be extra precise
+        const prefetchThreshold = this.questionInterval === 1 ? 8 : 10;
+
+        // Pre-fetch the question when approaching the interval point
+        if (timeToNextInterval <= prefetchThreshold && timeToNextInterval > 0 && !this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
+            console.log(`Pre-fetching question for interval ${currentIntervalId} at time ${currentTime.toFixed(2)}, ${timeToNextInterval.toFixed(2)}s before interval point`);
+
+            // Use the current interval's content as the source material
+            const contentStartTime = Math.max(0, nextIntervalTime - intervalInSeconds);
+            const contentEndTime = nextIntervalTime;
+
+            try {
+                this.nextQuestionData = await this.fetchQuestion(contentStartTime, contentEndTime);
+                console.log(`Question pre-fetched successfully for interval ${currentIntervalId}`);
+            } catch (error) {
+                console.error(`Failed to pre-fetch question for interval ${currentIntervalId}:`, error);
+            }
+        }
+
+        // Show question when we hit or pass the interval point (with a small buffer for timing precision)
+        const bufferTime = 0.5; // Half-second buffer
+        if (timeToNextInterval <= bufferTime && currentTime >= (nextIntervalTime - bufferTime) && this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
+            console.log(`Showing question at interval point ${nextIntervalTime}s (current time: ${currentTime.toFixed(2)}s)`);
 
             // Mark this interval as used
-            this.usedTimestamps.add(intervalKey);
+            this.usedTimestamps.add(currentIntervalId);
 
+            // Show the pre-fetched question
             this.showQuestion(this.nextQuestionData);
+
+            // Pause the video
             this.player.pauseVideo();
+
+            // Record this time and reset question data
             this.lastQuestionTime = currentTime;
             this.nextQuestionData = null;
         }
@@ -520,6 +568,7 @@ class HostGame {
 
     async fetchQuestion(startTime, endTime) {
         try {
+            console.log(`Fetching question for time range ${startTime.toFixed(2)}-${endTime.toFixed(2)}`);
             const response = await fetch('/api/generate_question', {
                 method: 'POST',
                 headers: {
@@ -536,15 +585,15 @@ class HostGame {
 
             const data = await response.json();
             if (data.success) {
-                console.log(`Generated question for time range ${startTime}-${endTime}: "${data.reflective_question.substring(0, 50)}..."`);
+                console.log(`Generated question for time range ${startTime.toFixed(2)}-${endTime.toFixed(2)}: "${data.reflective_question.substring(0, 50)}..."`);
                 return data;
             } else {
                 console.error('Failed to generate question:', data.error);
-                return null;
+                throw new Error(data.error || 'Failed to generate question');
             }
         } catch (error) {
             console.error('Error generating question:', error);
-            return null;
+            throw error;
         }
     }
 
@@ -591,6 +640,10 @@ class HostGame {
         this.answersCount.textContent = '0';
         this.totalPlayers.textContent = this.players.size;
 
+        // Reset feedback attempts counter
+        this.feedbackAttempts = 0;
+
+        console.log('Broadcasting question to players:', questionData.reflective_question.substring(0, 30) + '...');
         this.socket.emit('broadcast_question', {
             game_code: this.gameCode,
             question: {
@@ -605,46 +658,122 @@ class HostGame {
     handlePlayerAnswer(playerId, nickname, answer) {
         if (!this.isQuestionActive) return;
 
+        console.log(`Received answer from ${nickname} (${playerId}): ${answer.substring(0, 20)}...`);
         this.playerAnswers.set(playerId, answer);
         this.answersReceived++;
         this.answersCount.textContent = this.answersReceived;
 
         if (this.answersReceived === this.players.size) {
+            console.log('All players have answered. Checking answers...');
             this.checkAllAnswers();
         }
     }
 
+    showFeedbackEarly() {
+        if (this.isQuestionActive && this.gameCode) {
+            console.log('Requesting early feedback');
+
+            // Disable the button to prevent multiple clicks
+            this.showFeedbackBtn.disabled = true;
+            this.showFeedbackBtn.textContent = 'Processing...';
+
+            // Increment attempt counter
+            this.feedbackAttempts++;
+
+            // Send show_feedback event to server
+            this.socket.emit('show_feedback', { game_code: this.gameCode });
+
+            // Set a timeout to re-enable the button and retry if necessary
+            setTimeout(() => {
+                // If no feedback received within 3 seconds and we haven't tried too many times
+                if (this.isQuestionActive && this.feedbackAttempts < 3) {
+                    console.log(`Feedback not received after 3 seconds, retry attempt ${this.feedbackAttempts}`);
+                    this.showFeedbackBtn.disabled = false;
+                    this.showFeedbackBtn.textContent = 'Show Feedback (Retry)';
+                } else if (this.feedbackAttempts >= 3) {
+                    // After 3 attempts, offer a more direct solution
+                    console.log('Multiple feedback attempts failed, offering bypass option');
+
+                    // Add a bypass option
+                    const bypassButton = document.createElement('button');
+                    bypassButton.className = 'btn btn-warning mt-2';
+                    bypassButton.textContent = 'Skip Feedback & Continue';
+                    bypassButton.onclick = () => this.resumeVideo();
+
+                    // Add it next to the existing button
+                    this.showFeedbackBtn.parentNode.appendChild(bypassButton);
+
+                    // Update the original button
+                    this.showFeedbackBtn.disabled = true;
+                    this.showFeedbackBtn.textContent = 'Feedback Failed';
+                }
+            }, 3000);
+        }
+    }
+
     async checkAllAnswers() {
+        if (this.playerAnswers.size === 0) {
+            console.warn('No player answers to check');
+            this.continueVideo.classList.remove('hidden');
+            this.showFeedbackBtn.classList.add('hidden');
+            return;
+        }
+
         try {
+            console.log('Checking answers...');
+
+            // Create a structured request with all player answers
+            const requestData = {
+                content_segment: this.currentQuestion.content_segment,
+                question: this.currentQuestion.reflective_question,
+                answers: Array.from(this.playerAnswers.entries()).map(([pid, ans]) => ({
+                    player_id: pid,
+                    player_name: this.players.get(pid)?.nickname || 'Unknown Player',
+                    answer: ans
+                }))
+            };
+
+            console.log(`Sending ${requestData.answers.length} answers for checking`);
+
             const response = await fetch('/api/check_answer', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    content_segment: this.currentQuestion.content_segment,
-                    question: this.currentQuestion.reflective_question,
-                    answers: Array.from(this.playerAnswers.entries()).map(([pid, ans]) => ({
-                        player_id: pid,
-                        player_name: this.players.get(pid).nickname,
-                        answer: ans
-                    }))
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
             });
+
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
 
             const data = await response.json();
             if (data.success) {
+                console.log(`Answer check successful: ${data.results.length} results received`);
                 this.displayAnswerResults(data.results);
+            } else {
+                throw new Error(data.error || 'Unknown error checking answers');
             }
         } catch (error) {
             console.error('Error checking answers:', error);
+
+            // Show error message and fallback UI
+            this.explanationArea.textContent = `Error checking answers: ${error.message}. Please try again or continue.`;
+            this.explanationArea.classList.remove('hidden');
+
+            // Show continue button even if checking failed
+            this.continueVideo.classList.remove('hidden');
+            this.showFeedbackBtn.classList.add('hidden');
         }
     }
 
     async displayAnswerResults(results) {
+        // Clear the player answers display and update UI state
         this.playerAnswersDisplay.innerHTML = '';
         this.showFeedbackBtn.classList.add('hidden');
+        this.showFeedbackBtn.disabled = false;
 
+        console.log(`Displaying results for ${results.length} answers`);
+
+        // Highlight the correct answer
         const answerOptions = this.answerArea.querySelectorAll('.answer-option');
         answerOptions.forEach(option => {
             const originalText = option.getAttribute('data-original-text');
@@ -653,14 +782,16 @@ class HostGame {
             }
         });
 
+        // Process each player result
         for (const result of results) {
+            // Update player score if correct
             const player = this.players.get(result.player_id);
-            if (result.is_correct) {
+            if (player && result.is_correct) {
                 player.score += 100;
                 this.players.set(result.player_id, player);
             }
 
-            // Store original explanation for translation
+            // Prepare translated text
             const originalExplanation = result.explanation;
             const translatedExplanation = this.isHebrewActive ?
                 await this.translateText(originalExplanation) : originalExplanation;
@@ -670,12 +801,13 @@ class HostGame {
             const incorrectText = this.isHebrewActive ?
                 await this.translateText('Incorrect') : 'Incorrect';
 
+            // Create and append the answer element
             const answerElement = document.createElement('div');
             answerElement.className = `list-group-item ${result.is_correct ? 'correct' : 'incorrect'}`;
             answerElement.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <strong>${player.nickname}</strong>
+                        <strong>${player?.nickname || 'Unknown Player'}</strong>
                         <div>${result.answer}</div>
                     </div>
                     <span class="badge ${result.is_correct ? 'bg-success' : 'bg-danger'}">
@@ -685,6 +817,7 @@ class HostGame {
             `;
             this.playerAnswersDisplay.appendChild(answerElement);
 
+            // Emit result to the player
             this.socket.emit('answer_result', {
                 game_code: this.gameCode,
                 player_id: result.player_id,
@@ -693,6 +826,7 @@ class HostGame {
             });
         }
 
+        // Display explanation if available
         if (results.length > 0) {
             this.explanationArea.setAttribute('data-original-text', results[0].explanation);
             this.explanationArea.textContent = this.isHebrewActive ?
@@ -700,24 +834,18 @@ class HostGame {
             this.explanationArea.classList.remove('hidden');
         }
 
+        // Update scores and show continue button
         this.updateScoreDisplay();
         this.continueVideo.classList.remove('hidden');
-    }
 
-    showFeedbackEarly() {
-        if (this.isQuestionActive && this.gameCode) {
-            console.log('Requesting early feedback');
-            this.socket.emit('show_feedback', { game_code: this.gameCode });
-            this.showFeedbackBtn.classList.add('hidden');
-        }
+        console.log('Answer results displayed successfully');
     }
 
     resumeVideo() {
         // Completely clear and hide the question UI
         this.questionContainer.classList.add('hidden');
         this.continueVideo.classList.add('hidden');
-        this.explanationArea.classList.add('hidden');
-        this.explanationArea.textContent = '';
+        this.explanationArea.classList.add('hidden');        this.explanationArea.textContent = '';
         this.questionText.textContent = '';
         this.answerArea.innerHTML = '';
         this.playerAnswersDisplay.innerHTML = '';
@@ -726,8 +854,10 @@ class HostGame {
         this.isQuestionActive = false;
         this.answersReceived = 0;
         this.playerAnswers.clear();
+        this.feedbackAttempts = 0;
 
         // Tell all clients that we've cleared the feedback
+        console.log('Emitting clear_feedback event');
         this.socket.emit('clear_feedback', { game_code: this.gameCode });
 
         // Resume the video playback

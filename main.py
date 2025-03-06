@@ -550,7 +550,7 @@ def handle_show_feedback(data):
         # Emit feedback event with current answers to all players
         emit('show_feedback', {
             'answers': submitted_answers
-        }, room=game_code)
+        }, room=game_code, broadcast=True)  # Ensure broadcast to all
 
 @socketio.on('submit_answer')
 def handle_submit_answer(data):
