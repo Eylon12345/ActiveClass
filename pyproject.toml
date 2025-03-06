@@ -20,4 +20,5 @@ dependencies = [
     "gevent>=23.9.1",
     "eventlet>=0.33.3",
     "qrcode[pil]>=8.0",
+    "twilio>=9.4.6",
 ]

@@ -59,10 +59,6 @@ class PlayerGame {
             this.languageToggle.addEventListener('change', (e) => {
                 console.log('Language toggle changed:', e.target.checked);
                 this.isHebrewActive = e.target.checked;
-
-                // Show immediate feedback
-                alert(e.target.checked ? 'Switching to Hebrew...' : 'Switching to English...');
-
                 this.updateUILanguage();
             });
         } else {
@@ -419,11 +415,5 @@ class PlayerGame {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing PlayerGame');
-
-    // Add a global alert to notify user about the Hebrew translation feature
-    setTimeout(() => {
-        alert('Welcome! This game has Hebrew translation available. Use the toggle switch in the top-right corner to switch to Hebrew.');
-    }, 1000);
-
     new PlayerGame();
 });

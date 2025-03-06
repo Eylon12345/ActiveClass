@@ -80,10 +80,6 @@ class HostGame {
             this.languageToggle.addEventListener('change', (e) => {
                 console.log('Language toggle changed:', e.target.checked);
                 this.isHebrewActive = e.target.checked;
-
-                // Show immediate feedback
-                alert(e.target.checked ? 'Switching to Hebrew...' : 'Switching to English...');
-
                 this.updateUILanguage();
             });
         }
@@ -281,9 +277,11 @@ class HostGame {
                 qrCodeElement.innerHTML = '';
                 console.log('QR code container cleared');
 
-                // Make the QR code container visually distinct
-                qrCodeElement.style.border = '3px solid #007bff';
+                // Style for a smaller QR code
+                qrCodeElement.style.border = '2px solid #007bff';
                 qrCodeElement.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+                qrCodeElement.style.maxWidth = '120px';  // Smaller size
+                qrCodeElement.style.margin = '0 auto';   // Center it
 
                 console.log('Generating QR code for URL:', joinUrl);
 
@@ -418,11 +416,15 @@ class HostGame {
 
         const currentTime = Math.floor(this.player.getCurrentTime());
 
-        if (currentTime > this.lastQuestionTime + 55 && !this.nextQuestionData) {
+        // FIX: Generate a new question every 30 seconds instead of 60 seconds
+        // This way we ensure we get a new context for each question
+        if (currentTime > this.lastQuestionTime + 25 && !this.nextQuestionData) {
+            console.log('Pre-fetching question at time:', currentTime + 5);
             this.nextQuestionData = await this.fetchQuestion(currentTime + 5);
         }
 
-        if (currentTime > this.lastQuestionTime + 60 && this.nextQuestionData) {
+        // Show the question after 30 seconds has passed since the last question
+        if (currentTime > this.lastQuestionTime + 30 && this.nextQuestionData) {
             console.log('Showing question at time:', currentTime);
             this.showQuestion(this.nextQuestionData);
             this.player.pauseVideo();
@@ -622,11 +624,5 @@ class HostGame {
 // Initialize when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing HostGame');
-
-    // Add a global alert to notify user about features
-    setTimeout(() => {
-        alert('Welcome! This game has two special features:\n\n1. QR Code: Look for it when you create a game\n2. Hebrew Translation: Use the toggle switch in the top-right corner');
-    }, 1000);
-
     new HostGame();
 });
