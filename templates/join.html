@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html data-bs-theme="dark">
+<html data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Join Game - YouTube Quiz</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="/static/css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/modern.css" rel="stylesheet">
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
 </head>
 <body>
-    <div class="container min-vh-100 d-flex flex-column justify-content-center">
+    <div class="container-fluid py-4">
         <!-- Language Selector -->
         <div class="mb-3 d-flex justify-content-end">
-            <div class="form-check form-switch" style="border: 3px solid #ff5733; padding: 10px; border-radius: 8px; background-color: #343a40;">
-                <input class="form-check-input" type="checkbox" id="languageToggle" style="transform: scale(1.5);">
-                <label class="form-check-label" for="languageToggle" style="margin-left: 10px; font-weight: bold;">עברית / Hebrew</label>
+            <div class="form-check form-switch" style="border: 2px solid var(--primary); padding: 10px; border-radius: var(--radius); background-color: var(--secondary);">
+                <input class="form-check-input" type="checkbox" id="languageToggle" style="transform: scale(1.2);">
+                <label class="form-check-label" for="languageToggle" style="margin-left: 10px; font-weight: 500;">עברית / Hebrew</label>
             </div>
         </div>
 
@@ -37,7 +37,7 @@
         <!-- Waiting Phase -->
         <div id="waitingPhase" class="card hidden">
             <div class="card-body text-center">
-                <h3>Waiting for Game to Start</h3>
+                <h3 class="card-title">Waiting for Game to Start</h3>
                 <p>You've joined as: <span id="playerNickname"></span></p>
                 <p>Game Code: <span id="currentGameCode"></span></p>
                 <div class="spinner-border text-primary" role="status">
@@ -57,7 +57,7 @@
                 <div class="card-body">
                     <h3 id="questionText" class="card-title mb-4"></h3>
                     <div id="answerArea" class="d-grid gap-3"></div>
-                    <div id="feedback" class="alert mt-4 hidden"></div>
+                    <div id="feedback" class="feedback mt-4 hidden"></div>
                 </div>
             </div>
         </div>
@@ -65,7 +65,7 @@
         <!-- Results Phase -->
         <div id="resultsPhase" class="card hidden">
             <div class="card-body text-center">
-                <h3>Game Over!</h3>
+                <h3 class="card-title">Game Over!</h3>
                 <p class="lead">Your Score: <span id="finalScore">0</span></p>
                 <button id="playAgain" class="btn btn-primary">Play Again</button>
             </div>
