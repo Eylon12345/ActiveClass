@@ -47,13 +47,23 @@ class PlayerGame {
             e.target.value = e.target.value.toUpperCase();
         });
 
-        // Add language toggle event
+        // Add language toggle event with immediate visual feedback
         if (this.languageToggle) {
             console.log('Setting up language toggle event listener for join page');
-            this.languageToggle.addEventListener('change', async (e) => {
+
+            // Add a prominent style to make the toggle more visible
+            this.languageToggle.parentElement.style.border = '2px solid #007bff';
+            this.languageToggle.parentElement.style.padding = '8px';
+            this.languageToggle.parentElement.style.borderRadius = '8px';
+
+            this.languageToggle.addEventListener('change', (e) => {
                 console.log('Language toggle changed:', e.target.checked);
                 this.isHebrewActive = e.target.checked;
-                await this.updateUILanguage();
+
+                // Show immediate feedback
+                alert(e.target.checked ? 'Switching to Hebrew...' : 'Switching to English...');
+
+                this.updateUILanguage();
             });
         } else {
             console.error('Language toggle element not found on join page');
@@ -409,5 +419,11 @@ class PlayerGame {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing PlayerGame');
+
+    // Add a global alert to notify user about the Hebrew translation feature
+    setTimeout(() => {
+        alert('Welcome! This game has Hebrew translation available. Use the toggle switch in the top-right corner to switch to Hebrew.');
+    }, 1000);
+
     new PlayerGame();
 });

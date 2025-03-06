@@ -287,34 +287,42 @@ class HostGame {
 
                 console.log('Generating QR code for URL:', joinUrl);
 
-                // Check if QRCode is available
-                if (typeof QRCode === 'function') {
-                    console.log('QRCode constructor is available');
+                // Use server-side QR code generation
+                fetch('/api/generate_qr', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ data: joinUrl }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Create an image element with the base64 data
+                        const img = document.createElement('img');
+                        img.src = data.qr_code;
+                        img.style.width = '100%';
+                        img.style.height = 'auto';
+                        qrCodeElement.appendChild(img);
 
-                    // Create new QR code with higher error correction
-                    const qr = new QRCode(qrCodeElement, {
-                        text: joinUrl,
-                        width: 150,
-                        height: 150,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
+                        // Add direct link below QR code
+                        const joinLinkElement = document.createElement('div');
+                        joinLinkElement.className = 'mt-2 text-center';
+                        joinLinkElement.innerHTML = `<strong>Join URL:</strong><br><a href="${joinUrl}" target="_blank">${joinUrl}</a>`;
+                        qrCodeElement.appendChild(joinLinkElement);
 
-                    console.log('QR code created with dimensions:', qrCodeElement.offsetWidth, 'x', qrCodeElement.offsetHeight);
-
-                    // Add direct link below QR code
-                    const joinLinkElement = document.createElement('div');
-                    joinLinkElement.className = 'mt-2 text-center';
-                    joinLinkElement.innerHTML = `<strong>Join URL:</strong><br><a href="${joinUrl}" target="_blank">${joinUrl}</a>`;
-                    qrCodeElement.appendChild(joinLinkElement);
-                } else {
-                    console.error('QRCode library not properly loaded');
+                        console.log('Server-side QR code generated successfully');
+                    } else {
+                        throw new Error(data.error || 'Failed to generate QR code');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error generating QR code:', error);
                     qrCodeElement.innerHTML = `
-                        <div class="alert alert-warning">QR Code not available</div>
-                        <div class="mt-2">Join URL: <a href="${joinUrl}" target="_blank">${joinUrl}</a></div>
+                        <div class="alert alert-danger">Error generating QR code</div>
+                        <div>Join URL: <a href="${joinUrl}" target="_blank">${joinUrl}</a></div>
                     `;
-                }
+                });
             } else {
                 console.error('QR code container not found');
             }

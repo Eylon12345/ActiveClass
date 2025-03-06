@@ -1,7 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
 from openai import OpenAI
 import logging
@@ -16,6 +16,9 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import threading
 from datetime import datetime, timedelta
 import os
+import qrcode
+from io import BytesIO
+import base64
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
@@ -137,6 +140,42 @@ def host():
 @app.route("/join")
 def join():
     return render_template("join.html")
+
+# New route for generating QR codes on the server side
+@app.route("/api/generate_qr", methods=["POST"])
+def generate_qr():
+    try:
+        data = request.json.get("data", "")
+        if not data:
+            return jsonify({"success": False, "error": "No data provided for QR code"}), 400
+
+        logging.info(f"Generating QR code for: {data}")
+
+        # Create QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+
+        # Create an image from the QR Code
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Convert image to bytes
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+
+        return jsonify({
+            "success": True,
+            "qr_code": f"data:image/png;base64,{img_str}"
+        })
+    except Exception as e:
+        logging.error(f"Error generating QR code: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/create_game", methods=["POST"])
 def create_game():
