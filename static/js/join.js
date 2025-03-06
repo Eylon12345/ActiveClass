@@ -9,6 +9,8 @@ class PlayerGame {
         this.hasAnswered = false;
         this.isHebrewActive = false;
         this.translationCache = new Map(); // Cache for translations
+        this.isReconnecting = false;
+        this.lastFeedbackState = null;
 
         // DOM Elements
         this.joinPhase = document.getElementById('joinPhase');
@@ -35,13 +37,27 @@ class PlayerGame {
             this.gameCodeInput.value = urlParams.get('code');
         }
 
+        // Load previous state from session storage if available
+        this.loadStateFromStorage();
+
         this.setupEventListeners();
         this.setupSocketListeners();
+
+        // Try to reconnect if we have stored credentials
+        if (this.gameCode && this.playerId && this.nickname) {
+            console.log('Found stored game session, attempting to reconnect');
+            this.isReconnecting = true;
+            this.reconnectToGame();
+        }
     }
 
     setupEventListeners() {
         this.joinGameBtn.addEventListener('click', () => this.joinGame());
-        this.playAgainBtn.addEventListener('click', () => window.location.reload());
+        this.playAgainBtn.addEventListener('click', () => {
+            // Clear session storage before starting a new game
+            sessionStorage.removeItem('gameState');
+            window.location.reload();
+        });
 
         this.gameCodeInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
@@ -52,18 +68,94 @@ class PlayerGame {
             console.log('Setting up language toggle event listener for join page');
 
             // Add a prominent style to make the toggle more visible
-            this.languageToggle.parentElement.style.border = '2px solid #007bff';
+            this.languageToggle.parentElement.style.border = '2px solid var(--primary)';
             this.languageToggle.parentElement.style.padding = '8px';
             this.languageToggle.parentElement.style.borderRadius = '8px';
+
+            // Set initial state of toggle based on stored preference
+            if (this.isHebrewActive) {
+                this.languageToggle.checked = true;
+                this.updateUILanguage(false); // Don't save state again
+            }
 
             this.languageToggle.addEventListener('change', (e) => {
                 console.log('Language toggle changed:', e.target.checked);
                 this.isHebrewActive = e.target.checked;
-                this.updateUILanguage();
+                this.updateUILanguage(true);
             });
         } else {
             console.error('Language toggle element not found on join page');
         }
+
+        // Add window beforeunload event to warn about leaving during active game
+        window.addEventListener('beforeunload', (e) => {
+            if (this.gameCode && this.playerId && this.phase !== 'lobby' && this.phase !== 'results') {
+                // Save current state to session storage
+                this.saveStateToStorage();
+
+                // Show confirmation dialog
+                e.preventDefault();
+                e.returnValue = 'You are in an active game. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+    }
+
+    // Save game state to session storage for potential reconnection
+    saveStateToStorage() {
+        const gameState = {
+            gameCode: this.gameCode,
+            playerId: this.playerId,
+            nickname: this.nickname,
+            score: this.score,
+            isHebrewActive: this.isHebrewActive,
+            phase: this.phase
+        };
+
+        try {
+            sessionStorage.setItem('gameState', JSON.stringify(gameState));
+            console.log('Game state saved to session storage');
+        } catch (e) {
+            console.error('Failed to save game state:', e);
+        }
+    }
+
+    // Load game state from session storage
+    loadStateFromStorage() {
+        try {
+            const storedState = sessionStorage.getItem('gameState');
+            if (storedState) {
+                const gameState = JSON.parse(storedState);
+                this.gameCode = gameState.gameCode;
+                this.playerId = gameState.playerId; 
+                this.nickname = gameState.nickname;
+                this.score = gameState.score || 0;
+                this.isHebrewActive = gameState.isHebrewActive || false;
+                this.phase = gameState.phase || 'lobby';
+                console.log('Game state loaded from session storage');
+                return true;
+            }
+        } catch (e) {
+            console.error('Failed to load game state:', e);
+        }
+        return false;
+    }
+
+    // Reconnect to an existing game
+    reconnectToGame() {
+        console.log(`Attempting to reconnect to game ${this.gameCode} as player ${this.playerId}`);
+
+        // First show waiting phase
+        this.joinPhase.classList.add('hidden');
+        this.waitingPhase.classList.remove('hidden');
+        this.playerNickname.textContent = this.nickname;
+        this.currentGameCode.textContent = this.gameCode;
+
+        // Then try to join the room
+        this.socket.emit('join_game_room', { 
+            game_code: this.gameCode,
+            player_id: this.playerId
+        });
     }
 
     // Translation utility function
@@ -104,8 +196,13 @@ class PlayerGame {
     }
 
     // Update all UI elements based on selected language
-    async updateUILanguage() {
+    async updateUILanguage(saveState = true) {
         console.log('Updating UI language on join page, Hebrew active:', this.isHebrewActive);
+
+        // Save state if requested
+        if (saveState) {
+            this.saveStateToStorage();
+        }
 
         // Update static UI elements based on language
         if (this.isHebrewActive) {
@@ -152,9 +249,16 @@ class PlayerGame {
                 indicator.remove();
             }
 
-            // Reload page to restore English text
+            // Don't reload page, just restore English text if we have translations
             if (this.translationCache.size > 0) {
-                window.location.reload();
+                // Update main UI elements
+                document.querySelector('title').textContent = 'Join Game - YouTube Quiz';
+                this.joinGameBtn.textContent = 'Join Game';
+                this.playAgainBtn.textContent = 'Play Again';
+
+                // Restore placeholders
+                this.gameCodeInput.placeholder = 'Enter 6-digit code';
+                this.nicknameInput.placeholder = 'Enter your nickname';
             }
         }
 
@@ -200,15 +304,36 @@ class PlayerGame {
     setupSocketListeners() {
         this.socket.on('connect', () => {
             console.log('Connected to server');
+
+            // If we were reconnecting, rejoin the game room
+            if (this.isReconnecting) {
+                this.reconnectToGame();
+                this.isReconnecting = false;
+            }
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            this.showConnectionError();
+        });
+
+        this.socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            this.isReconnecting = true;
+            this.showDisconnectedMessage();
         });
 
         this.socket.on('game_started', () => {
+            console.log('Game started event received');
             this.showGamePhase();
         });
 
         this.socket.on('new_question', async (questionData) => {
+            console.log('New question received:', questionData);
             this.hasAnswered = false;
             this.currentQuestion = questionData;
+            this.phase = 'answering';
+            this.saveStateToStorage();
 
             // Store original text for translation
             const originalText = questionData.text;
@@ -237,9 +362,15 @@ class PlayerGame {
                 });
                 this.answerArea.appendChild(option);
             }
+
+            // Show the game phase if not already visible
+            if (this.waitingPhase.classList.contains('hidden') === false) {
+                this.showGamePhase();
+            }
         });
 
         this.socket.on('answer_result', async (data) => {
+            console.log('Answer result received:', data);
             if (data.player_id === this.playerId) {
                 this.showAnswerResult(data.is_correct);
             }
@@ -247,7 +378,84 @@ class PlayerGame {
 
         // Add new event handler for rejected answers
         this.socket.on('answer_rejected', async (data) => {
+            console.log('Answer rejected:', data);
             this.showRejectedAnswer(data.reason);
+        });
+
+        // Handle feedback display
+        this.socket.on('show_feedback', async (data) => {
+            console.log('Show feedback event received:', data);
+            // Set the phase to feedback
+            this.phase = 'feedback';
+            this.saveStateToStorage();
+
+            // If we already answered, we'll get a direct answer_result
+            // Otherwise, show "Time's up" message
+            if (!this.hasAnswered) {
+                const timeUpText = await this.translateText("Time's up!");
+                this.feedback.textContent = timeUpText;
+                this.feedback.setAttribute('data-original-text', "Time's up!");
+                this.feedback.className = 'feedback';
+                this.feedback.classList.remove('hidden');
+
+                // Disable all answer options
+                const options = this.answerArea.querySelectorAll('.answer-option');
+                options.forEach(option => {
+                    option.style.pointerEvents = 'none';
+                    option.classList.add('disabled');
+                });
+            }
+        });
+
+        // Handle reconnection confirmation
+        this.socket.on('player_reconnected', (data) => {
+            console.log('Reconnection confirmed for player:', data);
+            if (data.player_id === this.playerId) {
+                // We're back in the game
+                console.log('Successfully reconnected to the game');
+
+                // If we were in the game phase, show it again
+                if (this.phase === 'playing' || this.phase === 'answering' || this.phase === 'feedback') {
+                    this.showGamePhase();
+                }
+            }
+        });
+
+        // Handle timer updates
+        this.socket.on('timer_update', (data) => {
+            console.log('Timer update:', data.remaining_time);
+            // Could add a timer display here if needed
+        });
+    }
+
+    showConnectionError() {
+        // Create or update connection error message
+        let errorMsg = document.getElementById('connectionError');
+        if (!errorMsg) {
+            errorMsg = document.createElement('div');
+            errorMsg.id = 'connectionError';
+            errorMsg.className = 'alert alert-danger mt-2';
+            errorMsg.textContent = 'Connection error. Attempting to reconnect...';
+            document.body.prepend(errorMsg);
+        }
+    }
+
+    showDisconnectedMessage() {
+        // Create or update disconnection message
+        let disconnectMsg = document.getElementById('disconnectMessage');
+        if (!disconnectMsg) {
+            disconnectMsg = document.createElement('div');
+            disconnectMsg.id = 'disconnectMessage';
+            disconnectMsg.className = 'alert alert-warning mt-2 fixed-top w-100 text-center';
+            disconnectMsg.textContent = 'Disconnected from server. Reconnecting...';
+            document.body.prepend(disconnectMsg);
+        }
+
+        // Auto-hide after reconnection
+        this.socket.once('connect', () => {
+            if (disconnectMsg) {
+                disconnectMsg.remove();
+            }
         });
     }
 
@@ -274,8 +482,16 @@ class PlayerGame {
                 this.gameCode = data.game_code;
                 this.playerId = data.player_id;
                 this.nickname = nickname;
+                this.phase = 'lobby';
+
+                // Save state for potential reconnection
+                this.saveStateToStorage();
+
                 this.showWaitingPhase();
-                this.socket.emit('join_game_room', { game_code: this.gameCode });
+                this.socket.emit('join_game_room', { 
+                    game_code: this.gameCode,
+                    player_id: this.playerId
+                });
             } else {
                 alert(await this.translateText(data.error || 'Error joining game'));
             }
@@ -311,6 +527,8 @@ class PlayerGame {
     showGamePhase() {
         this.waitingPhase.classList.add('hidden');
         this.gamePhase.classList.remove('hidden');
+        this.phase = 'playing';
+        this.saveStateToStorage();
 
         // Translate score text if Hebrew is active
         if (this.isHebrewActive) {
@@ -322,6 +540,11 @@ class PlayerGame {
         const scoreLabel = this.gamePhase.querySelector('.alert.alert-info h5');
         if (scoreLabel && scoreLabel.firstChild && scoreLabel.firstChild.nodeType === Node.TEXT_NODE) {
             scoreLabel.firstChild.textContent = await this.translateText('Your Score: ');
+        }
+
+        // Update score value
+        if (this.playerScore) {
+            this.playerScore.textContent = this.score;
         }
     }
 
@@ -357,6 +580,9 @@ class PlayerGame {
             if (this.playerScore) {
                 this.playerScore.textContent = this.score;
             }
+
+            // Save updated score to session storage
+            this.saveStateToStorage();
         }
 
         const selectedOption = this.answerArea.querySelector('.answer-option.selected');
@@ -393,6 +619,8 @@ class PlayerGame {
         this.gamePhase.classList.add('hidden');
         this.resultsPhase.classList.remove('hidden');
         this.finalScore.textContent = this.score;
+        this.phase = 'results';
+        this.saveStateToStorage();
 
         // Translate results phase if Hebrew is active
         if (this.isHebrewActive) {

@@ -399,26 +399,83 @@ def start_answer_timer(game_code):
         if game_code in active_games and active_games[game_code]['phase'] == 'answering':
             handle_show_feedback({'game_code': game_code})
 
+    # Store the timer in the game state so we can cancel it if needed
     timer = threading.Timer(60.0, timer_callback)
     timer.start()
+
+    # Store timer and end time in game state
     active_games[game_code]['current_timer'] = timer
     active_games[game_code]['timer_end'] = datetime.now() + timedelta(seconds=60)
 
 @socketio.on('connect')
 def handle_connect():
-    logging.info('Client connected')
+    logging.info(f'Client connected: {request.sid}')
 
 @socketio.on('disconnect')
-def handle_disconnect(sid):
+def handle_disconnect():
     """Handle client disconnection."""
-    logging.info(f'Client disconnected: {sid}')
+    logging.info(f'Client disconnected: {request.sid}')
+
+    # Try to recover disconnected players
+    for game_code, game in active_games.items():
+        # Check if this socket is in this game
+        for player_id, player_data in game.get('player_sockets', {}).items():
+            if player_data.get('socket_id') == request.sid:
+                logging.info(f'Player {player_id} disconnected from game {game_code}')
+                # Don't remove the player immediately, allow reconnection
+                player_data['connected'] = False
+                player_data['last_seen'] = datetime.now()
+                # Notify other players
+                emit('player_disconnected', {
+                    'player_id': player_id,
+                    'nickname': game['players'][player_id]['nickname']
+                }, room=game_code)
+                break
 
 @socketio.on('join_game_room')
 def handle_join_room(data):
     game_code = data['game_code']
+    player_id = data.get('player_id')
+
     if game_code in active_games:
         join_room(game_code)
+
+        # Initialize player reconnection tracking if it doesn't exist
+        if 'player_sockets' not in active_games[game_code]:
+            active_games[game_code]['player_sockets'] = {}
+
+        # If this is a player (not just a spectator/host)
+        if player_id and player_id in active_games[game_code]['players']:
+            # Track this socket for the player
+            active_games[game_code]['player_sockets'][player_id] = {
+                'socket_id': request.sid,
+                'connected': True,
+                'last_seen': datetime.now()
+            }
+            logging.info(f'Player {player_id} connected with socket {request.sid} in game {game_code}')
+
+            # If this was a reconnection, update status
+            emit('player_reconnected', {
+                'player_id': player_id,
+                'nickname': active_games[game_code]['players'][player_id]['nickname']
+            }, room=game_code)
+
         emit('room_joined', {'game_code': game_code})
+
+        # Send current game state to reconnected player
+        if player_id and active_games[game_code]['phase'] != 'lobby':
+            current_question = active_games[game_code].get('current_question')
+            if current_question:
+                # Calculate remaining time if timer is active
+                remaining_time = 0
+                if 'timer_end' in active_games[game_code]:
+                    remaining_time = max(0, (active_games[game_code]['timer_end'] - datetime.now()).total_seconds())
+
+                # Send the current question to the reconnected player
+                emit('new_question', {
+                    **current_question,
+                    'timer_duration': remaining_time
+                }, room=request.sid)
 
 @socketio.on('start_game')
 def handle_start_game(data):
@@ -433,7 +490,7 @@ def handle_show_feedback(data):
     game_code = data['game_code']
     if game_code in active_games:
         # Cancel timer if it exists
-        if 'current_timer' in active_games[game_code]:
+        if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
             active_games[game_code]['current_timer'].cancel()
             active_games[game_code]['current_timer'] = None
 
@@ -444,7 +501,9 @@ def handle_show_feedback(data):
         # Get all submitted answers
         submitted_answers = active_games[game_code].get('submitted_answers', [])
 
-        # Emit feedback event with current answers
+        logging.info(f"Game {game_code}: Showing feedback for {len(submitted_answers)} answers")
+
+        # Emit feedback event with current answers to all players
         emit('show_feedback', {
             'answers': submitted_answers
         }, room=game_code)
@@ -455,9 +514,12 @@ def handle_submit_answer(data):
     player_id = data['player_id']
     answer = data['answer']
 
+    logging.info(f"Player {player_id} submitting answer in game {game_code}")
+
     if game_code in active_games and player_id in active_games[game_code]['players']:
-        # Check if feedback has been shown
+        # Check if feedback has been shown for the current question
         if active_games[game_code].get('feedback_shown', False):
+            logging.info(f"Answer rejected - feedback already shown for game {game_code}")
             emit('answer_rejected', {
                 'reason': 'Feedback has already been shown'
             }, room=request.sid)
@@ -467,20 +529,34 @@ def handle_submit_answer(data):
         if 'submitted_answers' not in active_games[game_code]:
             active_games[game_code]['submitted_answers'] = []
 
-        active_games[game_code]['submitted_answers'].append({
-            'player_id': player_id,
-            'nickname': active_games[game_code]['players'][player_id]['nickname'],
-            'answer': answer
-        })
+        # Check if player already submitted an answer
+        existing_answer_index = None
+        for i, existing_answer in enumerate(active_games[game_code]['submitted_answers']):
+            if existing_answer['player_id'] == player_id:
+                existing_answer_index = i
+                break
 
-        # Emit answer submitted event
+        if existing_answer_index is not None:
+            # Update existing answer
+            active_games[game_code]['submitted_answers'][existing_answer_index]['answer'] = answer
+            logging.info(f"Updated answer for player {player_id} in game {game_code}")
+        else:
+            # Add new answer
+            active_games[game_code]['submitted_answers'].append({
+                'player_id': player_id,
+                'nickname': active_games[game_code]['players'][player_id]['nickname'],
+                'answer': answer
+            })
+            logging.info(f"Added new answer for player {player_id} in game {game_code}")
+
+        # Emit answer submitted event to all players
         emit('answer_submitted', {
             'player_id': player_id,
             'nickname': active_games[game_code]['players'][player_id]['nickname'],
             'answer': answer
         }, room=game_code)
 
-        # Update remaining time
+        # Update remaining time for all players
         if 'timer_end' in active_games[game_code]:
             remaining_time = (active_games[game_code]['timer_end'] - datetime.now()).total_seconds()
             emit('timer_update', {'remaining_time': max(0, remaining_time)}, room=game_code)
@@ -491,6 +567,8 @@ def handle_broadcast_question(data):
     question_data = data['question']
 
     if game_code in active_games:
+        logging.info(f"Broadcasting new question in game {game_code}")
+
         # Reset submitted answers and feedback flag
         active_games[game_code]['submitted_answers'] = []
         active_games[game_code]['phase'] = 'answering'
@@ -506,6 +584,8 @@ def handle_broadcast_question(data):
             'timer_duration': 60
         }, room=game_code)
 
+        logging.info(f"Question broadcast complete for game {game_code}")
+
 @socketio.on('answer_result')
 def handle_answer_result(data):
     game_code = data['game_code']
@@ -520,6 +600,29 @@ def handle_answer_result(data):
             'player_id': player_id,
             'is_correct': is_correct
         }, room=game_code)
+
+# Clean up disconnected games periodically
+def cleanup_inactive_games():
+    """Remove games that have been inactive for more than 2 hours"""
+    current_time = datetime.now()
+    games_to_remove = []
+
+    for game_code, game in active_games.items():
+        # If game has no activity timestamp or is more than 2 hours old
+        if 'last_activity' not in game or (current_time - game['last_activity']).total_seconds() > 7200:
+            games_to_remove.append(game_code)
+
+    for game_code in games_to_remove:
+        del active_games[game_code]
+        logging.info(f"Removed inactive game {game_code}")
+
+# Schedule cleanup every hour
+def schedule_cleanup():
+    cleanup_inactive_games()
+    threading.Timer(3600, schedule_cleanup).start()
+
+# Start cleanup scheduler
+schedule_cleanup()
 
 # Initialize the OpenAI client
 # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
