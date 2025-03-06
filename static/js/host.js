@@ -16,6 +16,8 @@ class HostGame {
         this.isHebrewActive = false;
         this.translationCache = new Map(); // Cache for translations
         this.usedTimestamps = new Set(); // Track used timestamps for questions
+        this.questionInterval = 2; // Default: generate questions every 2 minutes
+        this.questionType = 3; // Default: balanced question type (1-5 scale)
 
         // DOM Elements
         this.setupPhase = document.getElementById('setupPhase');
@@ -44,6 +46,12 @@ class HostGame {
         this.showFeedbackBtn = document.getElementById('showFeedback');
         this.languageToggle = document.getElementById('languageToggle');
 
+        // New slider elements
+        this.questionIntervalSlider = document.getElementById('questionInterval');
+        this.questionTypeSlider = document.getElementById('questionType');
+        this.intervalDisplay = document.getElementById('intervalDisplay');
+        this.typeDisplay = document.getElementById('typeDisplay');
+
         // Debug QR Code library loading
         console.log('QRCode library loaded:', typeof QRCode !== 'undefined');
 
@@ -69,14 +77,25 @@ class HostGame {
         this.newGameBtn.addEventListener('click', () => window.location.reload());
         this.showFeedbackBtn.addEventListener('click', () => this.showFeedbackEarly());
 
+        // Add event listeners for the new sliders
+        if (this.questionIntervalSlider) {
+            this.questionIntervalSlider.addEventListener('input', () => this.updateIntervalDisplay());
+            this.updateIntervalDisplay(); // Initialize display
+        }
+
+        if (this.questionTypeSlider) {
+            this.questionTypeSlider.addEventListener('input', () => this.updateTypeDisplay());
+            this.updateTypeDisplay(); // Initialize display
+        }
+
         // Add language toggle event with immediate visual feedback
         if (this.languageToggle) {
             console.log('Setting up language toggle event listener');
 
             // Add a prominent style to make the toggle more visible
             this.languageToggle.parentElement.style.border = '2px solid var(--primary)';
-            this.languageToggle.parentElement.style.padding = '8px';
-            this.languageToggle.parentElement.style.borderRadius = '8px';
+            this.languageToggle.parentElement.style.padding = '10px';
+            this.languageToggle.parentElement.style.borderRadius = 'var(--radius)';
 
             this.languageToggle.addEventListener('change', (e) => {
                 console.log('Language toggle changed:', e.target.checked);
@@ -84,6 +103,43 @@ class HostGame {
                 this.updateUILanguage();
             });
         }
+    }
+
+    // Update the interval display based on slider value
+    updateIntervalDisplay() {
+        this.questionInterval = parseInt(this.questionIntervalSlider.value);
+        this.intervalDisplay.textContent = `${this.questionInterval} minute${this.questionInterval !== 1 ? 's' : ''}`;
+        console.log(`Question interval set to ${this.questionInterval} minutes`);
+    }
+
+    // Update the question type display based on slider value
+    updateTypeDisplay() {
+        this.questionType = parseInt(this.questionTypeSlider.value);
+        let typeText;
+
+        // Map the 1-5 scale to descriptive text
+        switch(this.questionType) {
+            case 1:
+                typeText = 'Very Specific';
+                break;
+            case 2:
+                typeText = 'Factual';
+                break;
+            case 3:
+                typeText = 'Balanced';
+                break;
+            case 4:
+                typeText = 'Analytical';
+                break;
+            case 5:
+                typeText = 'Deep Thinking';
+                break;
+            default:
+                typeText = 'Balanced';
+        }
+
+        this.typeDisplay.textContent = typeText;
+        console.log(`Question type set to ${typeText} (${this.questionType})`);
     }
 
     // Translation utility function
@@ -245,7 +301,12 @@ class HostGame {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ url }),
+                body: JSON.stringify({ 
+                    url,
+                    question_interval: this.questionInterval, // Send question interval
+                    question_type: this.questionType, // Send question type
+                    grade_level: this.gradeLevel.value
+                }),
             });
 
             const data = await response.json();
@@ -373,7 +434,11 @@ class HostGame {
             return;
         }
 
-        this.socket.emit('start_game', { game_code: this.gameCode });
+        this.socket.emit('start_game', { 
+            game_code: this.gameCode,
+            question_interval: this.questionInterval,
+            question_type: this.questionType
+        });
         this.showGamePhase();
     }
 
@@ -419,32 +484,32 @@ class HostGame {
 
         // Only generate questions at full minute marks (60, 120, 180, etc.)
         // And pre-fetch 10 seconds before to ensure question is ready
-        const isApproachingFullMinute = currentTime % 60 >= 50 && currentTime >= 60;
-        const nextFullMinute = Math.ceil(currentTime / 60) * 60;
+        const isApproachingFullMinute = currentTime % (this.questionInterval * 60) >= 50 && currentTime >= 60;
+        const nextIntervalTime = Math.ceil(currentTime / (this.questionInterval * 60)) * (this.questionInterval * 60);
 
         // Check if we've already used this minute segment
-        const minuteKey = Math.floor(currentTime / 60);
-        const alreadyUsed = this.usedTimestamps.has(minuteKey);
+        const intervalKey = Math.floor(currentTime / (this.questionInterval * 60));
+        const alreadyUsed = this.usedTimestamps.has(intervalKey);
 
         // Pre-fetch the question if we're approaching a full minute and haven't used this segment yet
         if (isApproachingFullMinute && !this.nextQuestionData && !alreadyUsed) {
-            console.log(`Pre-fetching question for minute ${minuteKey} at time ${currentTime}`);
-            // Use the previous full minute as the content window
-            const contentStartTime = Math.max(0, (minuteKey - 1) * 60);
-            const contentEndTime = minuteKey * 60;
+            console.log(`Pre-fetching question for interval ${intervalKey} at time ${currentTime}`);
+            // Use the previous time segment as the content window
+            const contentStartTime = Math.max(0, nextIntervalTime - (this.questionInterval * 60));
+            const contentEndTime = nextIntervalTime;
 
             this.nextQuestionData = await this.fetchQuestion(
-                contentStartTime,  // Start of previous minute 
-                contentEndTime     // End of previous minute
+                contentStartTime,  // Start of previous interval 
+                contentEndTime     // End of previous interval
             );
         }
 
-        // Show the question when we hit a full minute and we have pre-fetched data
-        if (currentTime >= nextFullMinute && this.nextQuestionData && !alreadyUsed) {
-            console.log(`Showing question at full minute ${minuteKey} (time: ${currentTime})`);
+        // Show the question when we hit a full interval and we have pre-fetched data
+        if (currentTime >= nextIntervalTime && this.nextQuestionData && !alreadyUsed) {
+            console.log(`Showing question at interval ${intervalKey} (time: ${currentTime})`);
 
-            // Mark this minute segment as used
-            this.usedTimestamps.add(minuteKey);
+            // Mark this interval as used
+            this.usedTimestamps.add(intervalKey);
 
             this.showQuestion(this.nextQuestionData);
             this.player.pauseVideo();
@@ -464,7 +529,7 @@ class HostGame {
                     video_id: this.videoId,
                     start_time: startTime,
                     end_time: endTime,
-                    question_type: 'closed',
+                    question_type: this.questionType, // Send the question type (1-5)
                     difficulty: this.gradeLevel.value
                 }),
             });

@@ -46,6 +46,27 @@
                             <option value="12">12th Grade</option>
                         </select>
                     </div>
+
+                    <!-- New Question Interval Slider -->
+                    <div class="mb-3">
+                        <label for="questionInterval" class="form-label">Question Interval</label>
+                        <div class="d-flex align-items-center">
+                            <input type="range" class="form-range me-2" id="questionInterval" min="1" max="3" step="1" value="2">
+                            <span id="intervalDisplay" class="badge bg-primary">2 minutes</span>
+                        </div>
+                        <small class="text-muted">How often questions will appear (1-3 minutes)</small>
+                    </div>
+
+                    <!-- New Question Type Slider -->
+                    <div class="mb-3">
+                        <label for="questionType" class="form-label">Question Type</label>
+                        <div class="d-flex align-items-center">
+                            <input type="range" class="form-range me-2" id="questionType" min="1" max="5" step="1" value="3">
+                            <span id="typeDisplay" class="badge bg-primary">Balanced</span>
+                        </div>
+                        <small class="text-muted">From specific (factual) to thinking (high-level)</small>
+                    </div>
+
                     <button id="createGame" class="btn btn-primary">Create Game</button>
                 </div>
             </div>

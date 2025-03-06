@@ -179,6 +179,11 @@ def generate_qr():
 def create_game():
     try:
         url = request.json["url"]
+        # Get the new parameters with defaults if not provided
+        question_interval = request.json.get("question_interval", 2)  # Default: 2 minutes
+        question_type = request.json.get("question_type", 3)  # Default: 3 (balanced)
+        grade_level = request.json.get("grade_level", "6")  # Default: 6th grade
+
         video_id = extract_video_id(url)
 
         if not video_id:
@@ -205,8 +210,9 @@ def create_game():
             'phase': 'lobby',
             'feedback_shown': False,  # Add this flag
             'settings': {
-                'question_type': 'closed',
-                'difficulty': '6'
+                'question_interval': question_interval,
+                'question_type': question_type,
+                'difficulty': grade_level
             }
         }
 
@@ -258,45 +264,57 @@ def generate_question():
         video_id = request.json["video_id"]
         start_time = request.json.get("start_time", 0)
         end_time = request.json.get("end_time", start_time + 60)
-        question_type = request.json.get("question_type", "closed")
+        question_type = request.json.get("question_type", 3)  # Default: 3 (balanced)
         grade_level = request.json.get("difficulty", "6")
 
         content_segment = get_transcript_segment(video_id, start_time, end_time)
         if not content_segment:
             return jsonify({"success": False, "error": "Could not get video transcript"}), 400
 
-        if question_type == "closed":
-            grade_prompt = f"Create questions suitable for {grade_level}th grade students. " if grade_level != "1" else "Create questions suitable for 1st grade students. "
-            completion = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"You are an expert in creating multiple-choice questions. {grade_prompt}Generate a question with one correct answer and three plausible but incorrect answers."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Generate a multiple-choice question based on this content: {content_segment}"
-                    }
-                ],
-                functions=[{
-                    "name": "generate_reflection_prompt",
-                    "parameters": ReflectionClosedPromptResponse.schema()
-                }],
-                function_call={"name": "generate_reflection_prompt"}
-            )
+        # Create a question type prompt based on the slider value (1-5)
+        question_style_prompt = ""
+        if question_type == 1:
+            question_style_prompt = "Create very specific, factual multiple-choice questions that directly test recall of information presented in the content. Focus on names, dates, and explicit facts mentioned."
+        elif question_type == 2:
+            question_style_prompt = "Create factual multiple-choice questions that test basic comprehension of the main points in the content."
+        elif question_type == 3:
+            question_style_prompt = "Create balanced multiple-choice questions that test both recall of facts and understanding of concepts from the content."
+        elif question_type == 4:
+            question_style_prompt = "Create analytical multiple-choice questions that require deeper understanding and application of concepts from the content."
+        else:  # question_type == 5
+            question_style_prompt = "Create deep thinking multiple-choice questions that challenge students to evaluate, synthesize or apply the content in new contexts. These should require critical thinking beyond just recalling information."
 
-            reflection_prompt = ReflectionClosedPromptResponse.model_validate_json(
-                completion.choices[0].message.function_call.arguments
-            )
+        grade_prompt = f"Create questions suitable for {grade_level}th grade students. " if grade_level != "1" else "Create questions suitable for 1st grade students. "
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"You are an expert in creating multiple-choice questions. {grade_prompt}{question_style_prompt}"
+                },
+                {
+                    "role": "user",
+                    "content": f"Generate a multiple-choice question based on this content: {content_segment}"
+                }
+            ],
+            functions=[{
+                "name": "generate_reflection_prompt",
+                "parameters": ReflectionClosedPromptResponse.schema()
+            }],
+            function_call={"name": "generate_reflection_prompt"}
+        )
 
-            return jsonify({
-                "success": True,
-                "reflective_question": reflection_prompt.reflection_prompt.question,
-                "correct_answer": reflection_prompt.reflection_prompt.correct_answer,
-                "incorrect_answers": reflection_prompt.reflection_prompt.incorrect_answers,
-                "content_segment": content_segment
-            })
+        reflection_prompt = ReflectionClosedPromptResponse.model_validate_json(
+            completion.choices[0].message.function_call.arguments
+        )
+
+        return jsonify({
+            "success": True,
+            "reflective_question": reflection_prompt.reflection_prompt.question,
+            "correct_answer": reflection_prompt.reflection_prompt.correct_answer,
+            "incorrect_answers": reflection_prompt.reflection_prompt.incorrect_answers,
+            "content_segment": content_segment
+        })
 
     except Exception as e:
         logging.error(f"Error generating question: {str(e)}")
@@ -479,8 +497,19 @@ def handle_join_room(data):
 @socketio.on('start_game')
 def handle_start_game(data):
     game_code = data['game_code']
+    # Capture the question settings if provided
+    question_interval = data.get('question_interval')
+    question_type = data.get('question_type')
+
     if game_code in active_games:
         active_games[game_code]['phase'] = 'playing'
+
+        # Update settings if provided
+        if question_interval is not None:
+            active_games[game_code]['settings']['question_interval'] = question_interval
+        if question_type is not None:
+            active_games[game_code]['settings']['question_type'] = question_type
+
         emit('game_started', {}, room=game_code)
 
 @socketio.on('show_feedback')
