@@ -72,7 +72,7 @@ def extract_video_id(url):
             return match.group(1)
     return None
 
-def get_transcript_segment(video_id, current_time):
+def get_transcript_segment(video_id, start_time, end_time):
     try:
         # Try multiple transcript retrieval methods
         transcript = None
@@ -115,8 +115,6 @@ def get_transcript_segment(video_id, current_time):
             return None
 
         relevant_text = []
-        end_time = current_time
-        start_time = max(0, end_time - 60)
 
         for entry in transcript:
             if start_time <= entry['start'] <= end_time:
@@ -188,7 +186,7 @@ def create_game():
 
         logging.info(f"Creating game for video ID: {video_id}")
 
-        test_transcript = get_transcript_segment(video_id, 10)
+        test_transcript = get_transcript_segment(video_id, 10, 70) #testing segment
         if test_transcript is None:
             return jsonify({
                 "success": False,
@@ -258,11 +256,12 @@ def join_game():
 def generate_question():
     try:
         video_id = request.json["video_id"]
-        current_time = request.json["current_time"]
+        start_time = request.json.get("start_time", 0)
+        end_time = request.json.get("end_time", start_time + 60)
         question_type = request.json.get("question_type", "closed")
         grade_level = request.json.get("difficulty", "6")
 
-        content_segment = get_transcript_segment(video_id, current_time)
+        content_segment = get_transcript_segment(video_id, start_time, end_time)
         if not content_segment:
             return jsonify({"success": False, "error": "Could not get video transcript"}), 400
 
@@ -600,6 +599,23 @@ def handle_answer_result(data):
             'player_id': player_id,
             'is_correct': is_correct
         }, room=game_code)
+
+
+# Add socket handler for clearing feedback
+@socketio.on('clear_feedback')
+def handle_clear_feedback(data):
+    """Handle clearing of feedback when host continues the video."""
+    game_code = data['game_code']
+    if game_code in active_games:
+        # Reset the feedback flag
+        active_games[game_code]['feedback_shown'] = False
+        active_games[game_code]['phase'] = 'playing'
+        active_games[game_code]['current_question'] = None
+        active_games[game_code]['submitted_answers'] = []
+
+        # Notify all players that feedback has been cleared
+        logging.info(f"Game {game_code}: Clearing feedback state")
+        emit('feedback_cleared', {}, room=game_code)
 
 # Clean up disconnected games periodically
 def cleanup_inactive_games():

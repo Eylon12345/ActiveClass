@@ -15,6 +15,7 @@ class HostGame {
         this.isYouTubeAPIReady = false;
         this.isHebrewActive = false;
         this.translationCache = new Map(); // Cache for translations
+        this.usedTimestamps = new Set(); // Track used timestamps for questions
 
         // DOM Elements
         this.setupPhase = document.getElementById('setupPhase');
@@ -73,7 +74,7 @@ class HostGame {
             console.log('Setting up language toggle event listener');
 
             // Add a prominent style to make the toggle more visible
-            this.languageToggle.parentElement.style.border = '2px solid #007bff';
+            this.languageToggle.parentElement.style.border = '2px solid var(--primary)';
             this.languageToggle.parentElement.style.padding = '8px';
             this.languageToggle.parentElement.style.borderRadius = '8px';
 
@@ -416,16 +417,35 @@ class HostGame {
 
         const currentTime = Math.floor(this.player.getCurrentTime());
 
-        // FIX: Generate a new question every 30 seconds instead of 60 seconds
-        // This way we ensure we get a new context for each question
-        if (currentTime > this.lastQuestionTime + 25 && !this.nextQuestionData) {
-            console.log('Pre-fetching question at time:', currentTime + 5);
-            this.nextQuestionData = await this.fetchQuestion(currentTime + 5);
+        // Only generate questions at full minute marks (60, 120, 180, etc.)
+        // And pre-fetch 10 seconds before to ensure question is ready
+        const isApproachingFullMinute = currentTime % 60 >= 50 && currentTime >= 60;
+        const nextFullMinute = Math.ceil(currentTime / 60) * 60;
+
+        // Check if we've already used this minute segment
+        const minuteKey = Math.floor(currentTime / 60);
+        const alreadyUsed = this.usedTimestamps.has(minuteKey);
+
+        // Pre-fetch the question if we're approaching a full minute and haven't used this segment yet
+        if (isApproachingFullMinute && !this.nextQuestionData && !alreadyUsed) {
+            console.log(`Pre-fetching question for minute ${minuteKey} at time ${currentTime}`);
+            // Use the previous full minute as the content window
+            const contentStartTime = Math.max(0, (minuteKey - 1) * 60);
+            const contentEndTime = minuteKey * 60;
+
+            this.nextQuestionData = await this.fetchQuestion(
+                contentStartTime,  // Start of previous minute 
+                contentEndTime     // End of previous minute
+            );
         }
 
-        // Show the question after 30 seconds has passed since the last question
-        if (currentTime > this.lastQuestionTime + 30 && this.nextQuestionData) {
-            console.log('Showing question at time:', currentTime);
+        // Show the question when we hit a full minute and we have pre-fetched data
+        if (currentTime >= nextFullMinute && this.nextQuestionData && !alreadyUsed) {
+            console.log(`Showing question at full minute ${minuteKey} (time: ${currentTime})`);
+
+            // Mark this minute segment as used
+            this.usedTimestamps.add(minuteKey);
+
             this.showQuestion(this.nextQuestionData);
             this.player.pauseVideo();
             this.lastQuestionTime = currentTime;
@@ -433,7 +453,7 @@ class HostGame {
         }
     }
 
-    async fetchQuestion(currentTime) {
+    async fetchQuestion(startTime, endTime) {
         try {
             const response = await fetch('/api/generate_question', {
                 method: 'POST',
@@ -442,7 +462,8 @@ class HostGame {
                 },
                 body: JSON.stringify({
                     video_id: this.videoId,
-                    current_time: currentTime,
+                    start_time: startTime,
+                    end_time: endTime,
                     question_type: 'closed',
                     difficulty: this.gradeLevel.value
                 }),
@@ -450,7 +471,11 @@ class HostGame {
 
             const data = await response.json();
             if (data.success) {
+                console.log(`Generated question for time range ${startTime}-${endTime}: "${data.reflective_question.substring(0, 50)}..."`);
                 return data;
+            } else {
+                console.error('Failed to generate question:', data.error);
+                return null;
             }
         } catch (error) {
             console.error('Error generating question:', error);
@@ -490,6 +515,16 @@ class HostGame {
 
         this.showFeedbackBtn.classList.remove('hidden');
         this.continueVideo.classList.add('hidden');
+
+        // Clear previous feedback and explanation
+        this.explanationArea.classList.add('hidden');
+        this.explanationArea.textContent = '';
+        this.playerAnswersDisplay.innerHTML = '';
+
+        // Reset answers received counters
+        this.answersReceived = 0;
+        this.answersCount.textContent = '0';
+        this.totalPlayers.textContent = this.players.size;
 
         this.socket.emit('broadcast_question', {
             game_code: this.gameCode,
@@ -613,10 +648,24 @@ class HostGame {
     }
 
     resumeVideo() {
+        // Completely clear and hide the question UI
         this.questionContainer.classList.add('hidden');
         this.continueVideo.classList.add('hidden');
         this.explanationArea.classList.add('hidden');
+        this.explanationArea.textContent = '';
+        this.questionText.textContent = '';
+        this.answerArea.innerHTML = '';
+        this.playerAnswersDisplay.innerHTML = '';
+
+        // Reset counters and flags
         this.isQuestionActive = false;
+        this.answersReceived = 0;
+        this.playerAnswers.clear();
+
+        // Tell all clients that we've cleared the feedback
+        this.socket.emit('clear_feedback', { game_code: this.gameCode });
+
+        // Resume the video playback
         this.player.playVideo();
     }
 }

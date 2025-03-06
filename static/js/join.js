@@ -69,8 +69,8 @@ class PlayerGame {
 
             // Add a prominent style to make the toggle more visible
             this.languageToggle.parentElement.style.border = '2px solid var(--primary)';
-            this.languageToggle.parentElement.style.padding = '8px';
-            this.languageToggle.parentElement.style.borderRadius = '8px';
+            this.languageToggle.parentElement.style.padding = '10px';
+            this.languageToggle.parentElement.style.borderRadius = 'var(--radius)';
 
             // Set initial state of toggle based on stored preference
             if (this.isHebrewActive) {
@@ -405,6 +405,27 @@ class PlayerGame {
                     option.classList.add('disabled');
                 });
             }
+        });
+
+        // Handle feedback cleared event from host
+        this.socket.on('feedback_cleared', () => {
+            console.log('Feedback cleared event received');
+
+            // Reset the question UI
+            this.phase = 'playing';
+            this.saveStateToStorage();
+
+            // Clear question and feedback display
+            this.questionText.textContent = '';
+            this.answerArea.innerHTML = '';
+            this.feedback.textContent = '';
+            this.feedback.classList.add('hidden');
+
+            // Reset answer state
+            this.hasAnswered = false;
+            this.currentQuestion = null;
+
+            console.log('Question UI reset after feedback cleared');
         });
 
         // Handle reconnection confirmation
