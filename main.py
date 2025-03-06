@@ -86,50 +86,49 @@ def get_transcript_segment(video_id, start_time, end_time):
             supadata_api_key = os.environ.get("SUPADATA_API_KEY")
 
             if not supadata_api_key:
-                logging.warning("Supadata API key not found in environment variables, falling back to YouTube Transcript API")
-            else:
-                # Make request to Supadata API
-                supadata_url = "https://api.supadata.ai/v1/youtube/transcript"
-                headers = {
-                    "X-API-Key": supadata_api_key,
-                    "Content-Type": "application/json"
-                }
-                params = {
-                    "videoId": video_id
-                }
-
-                response = requests.get(supadata_url, headers=headers, params=params)
-
-                if response.status_code == 200:
-                    # Parse Supadata response
-                    supadata_data = response.json()
-
-                    # Convert Supadata format to YouTubeTranscriptApi format
-                    if "transcript" in supadata_data:
-                        transcript = []
-                        for item in supadata_data["transcript"]:
-                            transcript.append({
-                                "text": item.get("text", ""),
-                                "start": item.get("start", 0),
-                                "duration": item.get("duration", 0)
-                            })
-                        logging.info("Supadata API transcript retrieval successful")
-                    else:
-                        logging.warning(f"Unexpected Supadata API response format: {supadata_data}")
-                else:
-                    logging.warning(f"Supadata API error: {response.status_code}, {response.text}")
-        except Exception as e:
-            logging.warning(f"Supadata API failed: {str(e)}")
-
-        # If Supadata failed, try YouTube Transcript API as fallback
-        if transcript is None:
-            logging.info("Falling back to YouTube Transcript API")
-            try:
-                transcript = YouTubeTranscriptApi.get_transcript(video_id)
-                logging.info("YouTube Transcript API retrieval successful")
-            except Exception as e:
-                logging.error(f"YouTube Transcript API failed: {str(e)}")
+                logging.warning("Supadata API key not found in environment variables")
                 return None
+
+            # Make request to Supadata API
+            supadata_url = "https://api.supadata.ai/v1/youtube/transcript"
+            headers = {
+                "X-API-Key": supadata_api_key,
+                "Content-Type": "application/json"
+            }
+            params = {
+                "videoId": video_id
+            }
+
+            response = requests.get(supadata_url, headers=headers, params=params)
+
+            if response.status_code == 200:
+                # Parse Supadata response
+                supadata_data = response.json()
+                logging.info(f"Supadata API response keys: {supadata_data.keys()}")
+
+                # Check if the response has the 'content' field as shown in the error message
+                if "content" in supadata_data:
+                    transcript = []
+                    for item in supadata_data["content"]:
+                        transcript.append({
+                            "text": item.get("text", ""),
+                            "start": item.get("offset", 0) / 1000,  # Convert milliseconds to seconds
+                            "duration": item.get("duration", 0) / 1000  # Convert milliseconds to seconds
+                        })
+                    logging.info("Supadata API transcript retrieval successful")
+                else:
+                    logging.warning(f"Unexpected Supadata API response format: {supadata_data}")
+                    return None
+            else:
+                logging.warning(f"Supadata API error: {response.status_code}, {response.text}")
+                return None
+        except Exception as e:
+            logging.error(f"Supadata API failed: {str(e)}")
+            return None
+
+        if transcript is None:
+            logging.error(f"Could not retrieve transcript for video {video_id}")
+            return None
 
         relevant_text = []
 
