@@ -627,8 +627,41 @@ class HostGame {
             this.answerArea.appendChild(option);
         }
 
+        // Add timer display
+        const timerDisplay = document.createElement('div');
+        timerDisplay.id = 'questionTimer';
+        timerDisplay.className = 'alert alert-info mt-3';
+        timerDisplay.textContent = 'Time remaining: 60 seconds';
+        this.questionContainer.insertBefore(timerDisplay, this.answerArea);
+
+        // Start countdown timer
+        let timeLeft = 60;
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timerDisplay) {
+                timerDisplay.textContent = `Time remaining: ${timeLeft} seconds`;
+                if (timeLeft <= 10) {
+                    timerDisplay.className = 'alert alert-danger mt-3';
+                }
+            }
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (timerDisplay) {
+                    timerDisplay.textContent = "Time's up!";
+                }
+            }
+        }, 1000);
+
         this.showFeedbackBtn.classList.remove('hidden');
+        this.showFeedbackBtn.disabled = false;
+        this.showFeedbackBtn.textContent = 'Show Feedback';
         this.continueVideo.classList.add('hidden');
+
+        // Remove any existing bypass button from previous questions
+        const existingBypassBtn = document.querySelector('.btn-warning');
+        if (existingBypassBtn) {
+            existingBypassBtn.remove();
+        }
 
         // Clear previous feedback and explanation
         this.explanationArea.classList.add('hidden');
@@ -672,6 +705,16 @@ class HostGame {
     showFeedbackEarly() {
         if (this.isQuestionActive && this.gameCode) {
             console.log('Requesting early feedback');
+
+            // If there are no answers, show message and enable continue
+            if (this.playerAnswers.size === 0) {
+                console.log('No answers to show feedback for');
+                this.explanationArea.textContent = 'No answers were submitted. You can continue the video.';
+                this.explanationArea.classList.remove('hidden');
+                this.continueVideo.classList.remove('hidden');
+                this.showFeedbackBtn.classList.add('hidden');
+                return;
+            }
 
             // Disable the button to prevent multiple clicks
             this.showFeedbackBtn.disabled = true;
@@ -805,7 +848,7 @@ class HostGame {
             const answerElement = document.createElement('div');
             answerElement.className = `list-group-item ${result.is_correct ? 'correct' : 'incorrect'}`;
             answerElement.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
+                <div                <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <strong>${player?.nickname || 'Unknown Player'}</strong>
                         <div>${result.answer}</div>
@@ -842,19 +885,36 @@ class HostGame {
     }
 
     resumeVideo() {
+        // Clear timer if it exists
+        const timerDisplay = document.getElementById('questionTimer');
+        if (timerDisplay) {
+            timerDisplay.remove();
+        }
+
         // Completely clear and hide the question UI
         this.questionContainer.classList.add('hidden');
         this.continueVideo.classList.add('hidden');
-        this.explanationArea.classList.add('hidden');        this.explanationArea.textContent = '';
+        this.explanationArea.classList.add('hidden');
+        this.explanationArea.textContent = '';
         this.questionText.textContent = '';
         this.answerArea.innerHTML = '';
         this.playerAnswersDisplay.innerHTML = '';
 
-        // Reset counters and flags
+        // Remove any bypass button that might exist
+        const bypassBtn = document.querySelector('.btn-warning');
+        if (bypassBtn) {
+            bypassBtn.remove();
+        }
+
+        // Reset all state
         this.isQuestionActive = false;
         this.answersReceived = 0;
         this.playerAnswers.clear();
         this.feedbackAttempts = 0;
+
+        // Reset feedback button state
+        this.showFeedbackBtn.disabled = false;
+        this.showFeedbackBtn.textContent = 'Show Feedback';
 
         // Tell all clients that we've cleared the feedback
         console.log('Emitting clear_feedback event');
