@@ -597,88 +597,29 @@ class HostGame {
         }
     }
 
-    async showQuestion(questionData) {
-        this.isQuestionActive = true;
-        this.currentQuestion = questionData;
-        this.questionContainer.classList.remove('hidden');
-
-        // Store original text and use translated version if Hebrew is active
-        const originalQuestion = questionData.reflective_question;
-        this.questionText.setAttribute('data-original-text', originalQuestion);
-        this.questionText.textContent = this.isHebrewActive ?
-            await this.translateText(originalQuestion) : originalQuestion;
-
-        this.answerArea.innerHTML = '';
-        this.answersReceived = 0;
-        this.answersCount.textContent = '0';
-        this.playerAnswers.clear();
-
-        const answers = [
-            questionData.correct_answer,
-            ...questionData.incorrect_answers
-        ].sort(() => Math.random() - 0.5);
-
-        for (const answer of answers) {
-            const option = document.createElement('div');
-            option.className = 'answer-option';
-            option.setAttribute('data-original-text', answer);
-            option.textContent = this.isHebrewActive ?
-                await this.translateText(answer) : answer;
-            this.answerArea.appendChild(option);
-        }
-
-        this.showFeedbackBtn.classList.remove('hidden');
-        this.continueVideo.classList.add('hidden');
-
-        // Clear previous feedback and explanation
-        this.explanationArea.classList.add('hidden');
-        this.explanationArea.textContent = '';
-        this.playerAnswersDisplay.innerHTML = '';
-
-        // Reset answers received counters
-        this.answersReceived = 0;
-        this.answersCount.textContent = '0';
-        this.totalPlayers.textContent = this.players.size;
-
-        // Reset feedback attempts counter
-        this.feedbackAttempts = 0;
-
-        console.log('Broadcasting question to players:', questionData.reflective_question.substring(0, 30) + '...');
-        this.socket.emit('broadcast_question', {
-            game_code: this.gameCode,
-            question: {
-                text: questionData.reflective_question,
-                correct_answer: questionData.correct_answer,
-                incorrect_answers: questionData.incorrect_answers,
-                content_segment: questionData.content_segment
-            }
-        });
-    }
-
-    handlePlayerAnswer(playerId, nickname, answer) {
-        if (!this.isQuestionActive) return;
-
-        console.log(`Received answer from ${nickname} (${playerId}): ${answer.substring(0, 20)}...`);
-        this.playerAnswers.set(playerId, answer);
-        this.answersReceived++;
-        this.answersCount.textContent = this.answersReceived;
-
-        if (this.answersReceived === this.players.size) {
-            console.log('All players have answered. Checking answers...');
-            this.checkAllAnswers();
-        }
-    }
-
     showFeedbackEarly() {
         if (this.isQuestionActive && this.gameCode) {
             console.log('Requesting early feedback');
 
+            // If there are no answers, show message and enable continue
+            if (this.playerAnswers.size === 0) {
+                console.log('No answers to show feedback for');
+                this.explanationArea.textContent = 'No answers were submitted. You can continue the video.';
+                this.explanationArea.classList.remove('hidden');
+                this.continueVideo.classList.remove('hidden');
+                this.showFeedbackBtn.classList.add('hidden');
+
+                // Remove any existing bypass button
+                const existingBypassBtn = document.querySelector('.btn-warning');
+                if (existingBypassBtn) {
+                    existingBypassBtn.remove();
+                }
+                return;
+            }
+
             // Disable the button to prevent multiple clicks
             this.showFeedbackBtn.disabled = true;
             this.showFeedbackBtn.textContent = 'Processing...';
-
-            // Increment attempt counter
-            this.feedbackAttempts++;
 
             // Send show_feedback event to server
             this.socket.emit('show_feedback', { game_code: this.gameCode });
@@ -686,26 +627,19 @@ class HostGame {
             // Set a timeout to re-enable the button and retry if necessary
             setTimeout(() => {
                 // If no feedback received within 3 seconds and we haven't tried too many times
-                if (this.isQuestionActive && this.feedbackAttempts < 3) {
-                    console.log(`Feedback not received after 3 seconds, retry attempt ${this.feedbackAttempts}`);
+                if (this.isQuestionActive && !this.continueVideo.classList.contains('hidden')) {
+                    console.log('Feedback failed, offering retry option');
                     this.showFeedbackBtn.disabled = false;
-                    this.showFeedbackBtn.textContent = 'Show Feedback (Retry)';
-                } else if (this.feedbackAttempts >= 3) {
-                    // After 3 attempts, offer a more direct solution
-                    console.log('Multiple feedback attempts failed, offering bypass option');
+                    this.showFeedbackBtn.textContent = 'Show Feedback';
 
-                    // Add a bypass option
-                    const bypassButton = document.createElement('button');
-                    bypassButton.className = 'btn btn-warning mt-2';
-                    bypassButton.textContent = 'Skip Feedback & Continue';
-                    bypassButton.onclick = () => this.resumeVideo();
-
-                    // Add it next to the existing button
-                    this.showFeedbackBtn.parentNode.appendChild(bypassButton);
-
-                    // Update the original button
-                    this.showFeedbackBtn.disabled = true;
-                    this.showFeedbackBtn.textContent = 'Feedback Failed';
+                    // Add a bypass option if it doesn't exist
+                    if (!document.querySelector('.btn-warning')) {
+                        const bypassButton = document.createElement('button');
+                        bypassButton.className = 'btn btn-warning mt-2';
+                        bypassButton.textContent = 'Skip Feedback & Continue';
+                        bypassButton.onclick = () => this.resumeVideo();
+                        this.showFeedbackBtn.parentNode.appendChild(bypassButton);
+                    }
                 }
             }, 3000);
         }
@@ -842,15 +776,309 @@ class HostGame {
     }
 
     resumeVideo() {
-        // Completely clear and hide the question UI
+        // Clear timer if it exists
+        const timerDisplay = document.getElementById('questionTimer');
+        if (timerDisplay) {
+            timerDisplay.remove();
+        }
+
+        // Remove any bypass button that might exist
+        const bypassBtn = document.querySelector('.btn-warning');
+        if (bypassBtn) {
+            bypassBtn.remove();
+        }
+
+        // Reset feedback button state
+        this.showFeedbackBtn.classList.remove('hidden');
+        this.showFeedbackBtn.disabled = false;
+        this.showFeedbackBtn.textContent = 'Show Feedback';
+
+        // Clear the question UI
         this.questionContainer.classList.add('hidden');
         this.continueVideo.classList.add('hidden');
-        this.explanationArea.classList.add('hidden');        this.explanationArea.textContent = '';
+        this.explanationArea.classList.add('hidden');
+        this.explanationArea.textContent = '';
         this.questionText.textContent = '';
         this.answerArea.innerHTML = '';
         this.playerAnswersDisplay.innerHTML = '';
 
-        // Reset counters and flags
+        // Reset all state
+        this.isQuestionActive = false;
+        this.answersReceived = 0;
+        this.playerAnswers.clear();
+        this.feedbackAttempts = 0;
+
+        // Tell all clients that we've cleared the feedback
+        console.log('Emitting clear_feedback event');
+        this.socket.emit('clear_feedback', { game_code: this.gameCode });
+
+        // Resume the video playback
+        this.player.playVideo();
+    }
+
+    showQuestion(questionData) {
+        this.isQuestionActive = true;
+        this.currentQuestion = questionData;
+        this.questionContainer.classList.remove('hidden');
+
+        // Store original text and use translated version if Hebrew is active
+        const originalQuestion = questionData.reflective_question;
+        this.questionText.setAttribute('data-original-text', originalQuestion);
+        this.questionText.textContent = this.isHebrewActive ?
+            await this.translateText(originalQuestion) : originalQuestion;
+
+        this.answerArea.innerHTML = '';
+        this.answersReceived = 0;
+        this.answersCount.textContent = '0';
+        this.playerAnswers.clear();
+
+        // Add timer display (host only)
+        const timerDisplay = document.createElement('div');
+        timerDisplay.id = 'questionTimer';
+        timerDisplay.className = 'alert alert-info mt-3';
+        timerDisplay.textContent = 'Time remaining: 60 seconds';
+        this.questionContainer.insertBefore(timerDisplay, this.answerArea);
+
+        // Start countdown timer
+        let timeLeft = 60;
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timerDisplay && document.body.contains(timerDisplay)) {
+                timerDisplay.textContent = `Time remaining: ${timeLeft} seconds`;
+                if (timeLeft <= 10) {
+                    timerDisplay.className = 'alert alert-danger mt-3';
+                }
+            } else {
+                clearInterval(timerInterval);
+            }
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (timerDisplay && document.body.contains(timerDisplay)) {
+                    timerDisplay.textContent = "Time's up!";
+                }
+            }
+        }, 1000);
+
+        const answers = [
+            questionData.correct_answer,
+            ...questionData.incorrect_answers
+        ].sort(() => Math.random() - 0.5);
+
+        for (const answer of answers) {
+            const option = document.createElement('div');
+            option.className = 'answer-option';
+            option.setAttribute('data-original-text', answer);
+            option.textContent = this.isHebrewActive ?
+                await this.translateText(answer) : answer;
+            this.answerArea.appendChild(option);
+        }
+
+        // Reset feedback UI
+        this.showFeedbackBtn.classList.remove('hidden');
+        this.showFeedbackBtn.disabled = false;
+        this.showFeedbackBtn.textContent = 'Show Feedback';
+        this.continueVideo.classList.add('hidden');
+
+        // Remove any existing bypass button
+        const existingBypassBtn = document.querySelector('.btn-warning');
+        if (existingBypassBtn) {
+            existingBypassBtn.remove();
+        }
+
+        // Clear previous feedback and explanation
+        this.explanationArea.classList.add('hidden');
+        this.explanationArea.textContent = '';
+        this.playerAnswersDisplay.innerHTML = '';
+
+        // Reset counters
+        this.answersReceived = 0;
+        this.answersCount.textContent = '0';
+        this.totalPlayers.textContent = this.players.size;
+
+        console.log('Broadcasting question to players:', questionData.reflective_question.substring(0, 30) + '...');
+        this.socket.emit('broadcast_question', {
+            game_code: this.gameCode,
+            question: {
+                text: questionData.reflective_question,
+                correct_answer: questionData.correct_answer,
+                incorrect_answers: questionData.incorrect_answers,
+                content_segment: questionData.content_segment
+            }
+        });
+    }
+
+    handlePlayerAnswer(playerId, nickname, answer) {
+        if (!this.isQuestionActive) return;
+
+        console.log(`Received answer from ${nickname} (${playerId}): ${answer.substring(0, 20)}...`);
+        this.playerAnswers.set(playerId, answer);
+        this.answersReceived++;
+        this.answersCount.textContent = this.answersReceived;
+
+        if (this.answersReceived === this.players.size) {
+            console.log('All players have answered. Checking answers...');
+            this.checkAllAnswers();
+        }
+    }
+
+    async checkAllAnswers() {
+        if (this.playerAnswers.size === 0) {
+            console.warn('No player answers to check');
+            this.continueVideo.classList.remove('hidden');
+            this.showFeedbackBtn.classList.add('hidden');
+            return;
+        }
+
+        try {
+            console.log('Checking answers...');
+
+            // Create a structured request with all player answers
+            const requestData = {
+                content_segment: this.currentQuestion.content_segment,
+                question: this.currentQuestion.reflective_question,
+                answers: Array.from(this.playerAnswers.entries()).map(([pid, ans]) => ({
+                    player_id: pid,
+                    player_name: this.players.get(pid)?.nickname || 'Unknown Player',
+                    answer: ans
+                }))
+            };
+
+            console.log(`Sending ${requestData.answers.length} answers for checking`);
+
+            const response = await fetch('/api/check_answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                console.log(`Answer check successful: ${data.results.length} results received`);
+                this.displayAnswerResults(data.results);
+            } else {
+                throw new Error(data.error || 'Unknown error checking answers');
+            }
+        } catch (error) {
+            console.error('Error checking answers:', error);
+
+            // Show error message and fallback UI
+            this.explanationArea.textContent = `Error checking answers: ${error.message}. Please try again or continue.`;
+            this.explanationArea.classList.remove('hidden');
+
+            // Show continue button even if checking failed
+            this.continueVideo.classList.remove('hidden');
+            this.showFeedbackBtn.classList.add('hidden');
+        }
+    }
+
+    async displayAnswerResults(results) {
+        // Clear the player answers display and update UI state
+        this.playerAnswersDisplay.innerHTML = '';
+        this.showFeedbackBtn.classList.add('hidden');
+        this.showFeedbackBtn.disabled = false;
+
+        console.log(`Displaying results for ${results.length} answers`);
+
+        // Highlight the correct answer
+        const answerOptions = this.answerArea.querySelectorAll('.answer-option');
+        answerOptions.forEach(option => {
+            const originalText = option.getAttribute('data-original-text');
+            if (originalText === this.currentQuestion.correct_answer) {
+                option.classList.add('correct');
+            }
+        });
+
+        // Process each player result
+        for (const result of results) {
+            // Update player score if correct
+            const player = this.players.get(result.player_id);
+            if (player && result.is_correct) {
+                player.score += 100;
+                this.players.set(result.player_id, player);
+            }
+
+            // Prepare translated text
+            const originalExplanation = result.explanation;
+            const translatedExplanation = this.isHebrewActive ?
+                await this.translateText(originalExplanation) : originalExplanation;
+
+            const correctText = this.isHebrewActive ?
+                await this.translateText('Correct') : 'Correct';
+            const incorrectText = this.isHebrewActive ?
+                await this.translateText('Incorrect') : 'Incorrect';
+
+            // Create and append the answer element
+            const answerElement = document.createElement('div');
+            answerElement.className = `list-group-item ${result.is_correct ? 'correct' : 'incorrect'}`;
+            answerElement.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${player?.nickname || 'Unknown Player'}</strong>
+                        <div>${result.answer}</div>
+                    </div>
+                    <span class="badge ${result.is_correct ? 'bg-success' : 'bg-danger'}">
+                        ${result.is_correct ? correctText : incorrectText}
+                    </span>
+                </div>
+            `;
+            this.playerAnswersDisplay.appendChild(answerElement);
+
+            // Emit result to the player
+            this.socket.emit('answer_result', {
+                game_code: this.gameCode,
+                player_id: result.player_id,
+                is_correct: result.is_correct,
+                explanation: result.explanation
+            });
+        }
+
+        // Display explanation if available
+        if (results.length > 0) {
+            this.explanationArea.setAttribute('data-original-text', results[0].explanation);
+            this.explanationArea.textContent = this.isHebrewActive ?
+                await this.translateText(results[0].explanation) : results[0].explanation;
+            this.explanationArea.classList.remove('hidden');
+        }
+
+        // Update scores and show continue button
+        this.updateScoreDisplay();
+        this.continueVideo.classList.remove('hidden');
+
+        console.log('Answer results displayed successfully');
+    }
+
+    resumeVideo() {
+        // Clear timer if it exists
+        const timerDisplay = document.getElementById('questionTimer');
+        if (timerDisplay) {
+            timerDisplay.remove();
+        }
+
+        // Remove any bypass button that might exist
+        const bypassBtn = document.querySelector('.btn-warning');
+        if (bypassBtn) {
+            bypassBtn.remove();
+        }
+
+        // Reset feedback button state
+        this.showFeedbackBtn.classList.remove('hidden');
+        this.showFeedbackBtn.disabled = false;
+        this.showFeedbackBtn.textContent = 'Show Feedback';
+
+        // Clear the question UI
+        this.questionContainer.classList.add('hidden');
+        this.continueVideo.classList.add('hidden');
+        this.explanationArea.classList.add('hidden');
+        this.explanationArea.textContent = '';
+        this.questionText.textContent = '';
+        this.answerArea.innerHTML = '';
+        this.playerAnswersDisplay.innerHTML = '';
+
+        // Reset all state
         this.isQuestionActive = false;
         this.answersReceived = 0;
         this.playerAnswers.clear();
