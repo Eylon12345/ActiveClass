@@ -615,6 +615,34 @@ class HostGame {
         this.answersCount.textContent = '0';
         this.playerAnswers.clear();
 
+        // Add timer display (host only)
+        const timerDisplay = document.createElement('div');
+        timerDisplay.id = 'questionTimer';
+        timerDisplay.className = 'alert alert-info mt-3';
+        timerDisplay.textContent = 'Time remaining: 60 seconds';
+        this.questionContainer.insertBefore(timerDisplay, this.answerArea);
+
+        // Start countdown timer
+        let timeLeft = 60;
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timerDisplay && document.body.contains(timerDisplay)) {
+                timerDisplay.textContent = `Time remaining: ${timeLeft} seconds`;
+                if (timeLeft <= 10) {
+                    timerDisplay.className = 'alert alert-danger mt-3';
+                }
+            } else {
+                clearInterval(timerInterval);
+            }
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (timerDisplay && document.body.contains(timerDisplay)) {
+                    timerDisplay.textContent = "Time's up!";
+                    this.checkAllAnswers(); //Check answers when timer runs out
+                }
+            }
+        }, 1000);
+
         const answers = [
             questionData.correct_answer,
             ...questionData.incorrect_answers
@@ -629,20 +657,27 @@ class HostGame {
             this.answerArea.appendChild(option);
         }
 
+        // Reset feedback UI
         this.showFeedbackBtn.classList.remove('hidden');
+        this.showFeedbackBtn.disabled = false;
+        this.showFeedbackBtn.textContent = 'Show Feedback';
         this.continueVideo.classList.add('hidden');
+
+        // Remove any existing bypass button
+        const existingBypassBtn = document.querySelector('.btn-warning');
+        if (existingBypassBtn) {
+            existingBypassBtn.remove();
+        }
 
         // Clear previous feedback and explanation
         this.explanationArea.classList.add('hidden');
         this.explanationArea.textContent = '';
         this.playerAnswersDisplay.innerHTML = '';
 
-        // Reset answers received counters
+        // Reset counters and state
         this.answersReceived = 0;
         this.answersCount.textContent = '0';
         this.totalPlayers.textContent = this.players.size;
-
-        // Reset feedback attempts counter
         this.feedbackAttempts = 0;
 
         console.log('Broadcasting question to players:', questionData.reflective_question.substring(0, 30) + '...');
@@ -664,11 +699,11 @@ class HostGame {
         this.playerAnswers.set(playerId, answer);
         this.answersReceived++;
         this.answersCount.textContent = this.answersReceived;
-
         if (this.answersReceived === this.players.size) {
             console.log('All players have answered. Checking answers...');
             this.checkAllAnswers();
         }
+
     }
 
     showFeedbackEarly() {
