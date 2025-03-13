@@ -498,13 +498,9 @@ class HostGame {
             this.checkInterval = null;
         }
 
-        // Start checking time whenever video is playing and not in question mode
-        if (event.data === YT.PlayerState.PLAYING) {
-            if (!this.isQuestionActive) {
-                // Check more frequently (every 250ms) to ensure we catch the exact time point
-                this.checkInterval = setInterval(() => this.handleTimeUpdate(), 250);
-                console.log('Started interval checking');
-            }
+        if (event.data === YT.PlayerState.PLAYING && !this.isQuestionActive) {
+            // Check more frequently (every 250ms) to ensure we catch the exact time point
+            this.checkInterval = setInterval(() => this.handleTimeUpdate(), 250);
         }
     }
 
@@ -533,9 +529,10 @@ class HostGame {
             console.log(`Current time: ${currentTime.toFixed(2)}s, Next interval: ${nextIntervalTime}s, Time to next: ${timeToNextInterval.toFixed(2)}s, Current interval ID: ${currentIntervalId}`);
         }
 
-        // Pre-fetch the question when approaching the interval point
-        const prefetchThreshold = 10; // Always use 10 seconds for consistency
+        // For 1-minute intervals, we want to be extra precise
+        const prefetchThreshold = this.questionInterval === 1 ? 8 : 10;
 
+        // Pre-fetch the question when approaching the interval point
         if (timeToNextInterval <= prefetchThreshold && timeToNextInterval > 0 && !this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
             console.log(`Pre-fetching question for interval ${currentIntervalId} at time ${currentTime.toFixed(2)}, ${timeToNextInterval.toFixed(2)}s before interval point`);
 
@@ -560,7 +557,7 @@ class HostGame {
             this.usedTimestamps.add(currentIntervalId);
 
             // Show the pre-fetched question
-            await this.showQuestion(this.nextQuestionData);
+            this.showQuestion(this.nextQuestionData);
 
             // Pause the video
             this.player.pauseVideo();
@@ -811,14 +808,6 @@ class HostGame {
 
         // Resume playback
         this.player.playVideo();
-
-        // Restart interval checking after a short delay to ensure video is playing
-        setTimeout(() => {
-            if (!this.checkInterval && !this.isQuestionActive) {
-                this.checkInterval = setInterval(() => this.handleTimeUpdate(), 250);
-                console.log('Restarted interval checking after resume');
-            }
-        }, 500);
     }
 
     async checkAllAnswers() {
@@ -871,7 +860,8 @@ class HostGame {
 
             // Show continue button even if checking failed
             this.continueVideo.classList.remove('hidden');
-            this.showFeedbackBtn.classList.add('hidden');        }
+            this.showFeedbackBtn.classList.add('hidden');
+        }
     }
 
     async displayAnswerResults(results) {
@@ -986,14 +976,6 @@ class HostGame {
 
         // Resume playback
         this.player.playVideo();
-
-        // Restart interval checking after a short delay to ensure video is playing
-        setTimeout(() => {
-            if (!this.checkInterval && !this.isQuestionActive) {
-                this.checkInterval = setInterval(() => this.handleTimeUpdate(), 250);
-                console.log('Restarted interval checking after resume');
-            }
-        }, 500);
     }
 }
 
