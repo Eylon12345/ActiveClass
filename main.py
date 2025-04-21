@@ -513,8 +513,9 @@ def handle_disconnect():
 def handle_join_room(data):
     game_code = data['game_code']
     player_id = data.get('player_id')
+    is_host = data.get('is_host', False)
 
-    logging.info(f'Socket {request.sid} attempting to join game room {game_code} as player {player_id}')
+    logging.info(f'Socket {request.sid} attempting to join game room {game_code} - Player ID: {player_id}, Is Host: {is_host}')
     
     if game_code not in active_games:
         logging.warning(f'Attempt to join non-existent game: {game_code}')
@@ -532,8 +533,21 @@ def handle_join_room(data):
     # Update last activity timestamp
     active_games[game_code]['last_activity'] = datetime.now()
 
+    # If this is the host
+    if is_host:
+        logging.info(f'Host connected to game {game_code} with socket {request.sid}')
+        active_games[game_code]['host_socket_id'] = request.sid
+        
+        # Send current game state to the host
+        emit('game_state_update', {
+            'state': active_games[game_code].get('phase', 'lobby'),
+            'players': [{'id': pid, 'nickname': p['nickname'], 'score': p.get('score', 0)} 
+                       for pid, p in active_games[game_code]['players'].items()],
+            'current_question': active_games[game_code].get('current_question')
+        })
+    
     # If this is a player (not just a spectator/host)
-    if player_id and player_id in active_games[game_code]['players']:
+    elif player_id and player_id in active_games[game_code]['players']:
         player_nickname = active_games[game_code]['players'][player_id]['nickname']
         logging.info(f'Player {player_id} ({player_nickname}) connected with socket {request.sid} in game {game_code}')
         

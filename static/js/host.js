@@ -19,6 +19,22 @@ class HostGame {
         this.questionInterval = 2; // Default: generate questions every 2 minutes
         this.questionType = 3; // Default: balanced question type (1-5 scale)
         this.feedbackAttempts = 0; // Track feedback attempts for retry logic
+        this.reconnecting = false;
+        
+        // Try to load previous game data from session storage
+        try {
+            const storedGameCode = sessionStorage.getItem('hostGameCode');
+            const storedVideoId = sessionStorage.getItem('hostVideoId');
+            
+            if (storedGameCode && storedVideoId) {
+                console.log(`Found stored game session: ${storedGameCode}`);
+                this.gameCode = storedGameCode;
+                this.videoId = storedVideoId;
+                this.reconnecting = true;
+            }
+        } catch (e) {
+            console.error('Failed to load game state from session storage:', e);
+        }
 
         // DOM Elements
         this.setupPhase = document.getElementById('setupPhase');
@@ -272,6 +288,18 @@ class HostGame {
     setupSocketListeners() {
         this.socket.on('connect', () => {
             console.log('Connected to server');
+            
+            // If we're reconnecting or have a stored game code, immediately rejoin the game room
+            if (this.reconnecting && this.gameCode) {
+                console.log(`Automatically rejoining game room ${this.gameCode} from stored session`);
+                this.socket.emit('join_game_room', { 
+                    game_code: this.gameCode,
+                    is_host: true
+                });
+                
+                // Show the appropriate UI based on stored state
+                this.showLobby();
+            }
         });
 
         this.socket.on('disconnect', () => {
@@ -283,7 +311,10 @@ class HostGame {
             console.log('Reconnected to server');
             // Rejoin the game room if we were in one
             if (this.gameCode) {
-                this.socket.emit('join_game_room', { game_code: this.gameCode });
+                this.socket.emit('join_game_room', { 
+                    game_code: this.gameCode,
+                    is_host: true
+                });
                 console.log('Rejoined game room after reconnection:', this.gameCode);
             }
         });
@@ -359,6 +390,23 @@ class HostGame {
             if (data.success) {
                 this.gameCode = data.game_code;
                 this.videoId = data.video_id;
+                
+                // Explicitly join the game room
+                console.log(`Host joining game room ${this.gameCode}`);
+                this.socket.emit('join_game_room', { 
+                    game_code: this.gameCode,
+                    is_host: true
+                });
+                
+                // Store game information in sessionStorage for potential reconnection
+                try {
+                    sessionStorage.setItem('hostGameCode', this.gameCode);
+                    sessionStorage.setItem('hostVideoId', this.videoId);
+                    console.log('Game info saved to session storage');
+                } catch (e) {
+                    console.error('Failed to save game info to session storage:', e);
+                }
+                
                 this.showLobby();
             } else {
                 alert(await this.translateText(data.error || 'Error creating game'));
@@ -443,7 +491,11 @@ class HostGame {
             }
         }
 
-        this.socket.emit('join_game_room', { game_code: this.gameCode });
+        // If not already connected to the room, join it
+        this.socket.emit('join_game_room', { 
+            game_code: this.gameCode,
+            is_host: true
+        });
     }
 
     addPlayer(playerId, nickname) {
