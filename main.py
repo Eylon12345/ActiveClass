@@ -227,9 +227,12 @@ def create_game():
             'video_id': video_id,
             'host_id': None,
             'players': {},
+            'player_sockets': {},
             'current_question': None,
             'phase': 'lobby',
-            'feedback_shown': False,  # Add this flag
+            'feedback_shown': False,
+            'submitted_answers': [],
+            'last_activity': datetime.now(),
             'settings': {
                 'question_interval': question_interval,
                 'question_type': question_type,
@@ -257,18 +260,36 @@ def join_game():
         nickname = request.json["nickname"]
 
         if game_code not in active_games:
+            logging.warning(f"Attempt to join non-existent game: {game_code}")
             return jsonify({"success": False, "error": "Invalid game code"}), 400
 
-        player_id = str(len(active_games[game_code]['players']) + 1)
+        # Generate a unique player ID with more resilience
+        # Get the highest existing player ID and add 1
+        existing_ids = [int(pid) for pid in active_games[game_code]['players'].keys() if pid.isdigit()]
+        next_id = 1 if not existing_ids else max(existing_ids) + 1
+        player_id = str(next_id)
+        
+        # Store player in game
         active_games[game_code]['players'][player_id] = {
             'nickname': nickname,
-            'score': 0
+            'score': 0,
+            'join_time': datetime.now().isoformat()
         }
+        
+        # Initialize player_sockets if it doesn't exist
+        if 'player_sockets' not in active_games[game_code]:
+            active_games[game_code]['player_sockets'] = {}
+            
+        # Update last activity timestamp
+        active_games[game_code]['last_activity'] = datetime.now()
 
+        logging.info(f"Player {player_id} ({nickname}) joined game {game_code}")
+
+        # Notify all clients in the room about the new player
         socketio.emit('player_joined', {
             'nickname': nickname,
             'player_id': player_id
-        }, room=game_code)
+        }, room=game_code, broadcast=True)
 
         return jsonify({
             "success": True,
@@ -277,7 +298,7 @@ def join_game():
         })
     except Exception as e:
         logging.error(f"Error joining game: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": f"Could not join game: {str(e)}"}), 500
 
 @app.route("/api/generate_question", methods=["POST"])
 def generate_question():
@@ -493,45 +514,60 @@ def handle_join_room(data):
     game_code = data['game_code']
     player_id = data.get('player_id')
 
-    if game_code in active_games:
-        join_room(game_code)
+    logging.info(f'Socket {request.sid} attempting to join game room {game_code} as player {player_id}')
+    
+    if game_code not in active_games:
+        logging.warning(f'Attempt to join non-existent game: {game_code}')
+        emit('join_error', {'error': 'Game does not exist'})
+        return
 
-        # Initialize player reconnection tracking if it doesn't exist
-        if 'player_sockets' not in active_games[game_code]:
-            active_games[game_code]['player_sockets'] = {}
+    # Join the socket to the game's room
+    join_room(game_code)
+    logging.info(f'Socket {request.sid} joined room {game_code}')
 
-        # If this is a player (not just a spectator/host)
-        if player_id and player_id in active_games[game_code]['players']:
-            # Track this socket for the player
-            active_games[game_code]['player_sockets'][player_id] = {
-                'socket_id': request.sid,
-                'connected': True,
-                'last_seen': datetime.now()
-            }
-            logging.info(f'Player {player_id} connected with socket {request.sid} in game {game_code}')
+    # Initialize player_sockets dictionary if it doesn't exist
+    if 'player_sockets' not in active_games[game_code]:
+        active_games[game_code]['player_sockets'] = {}
 
-            # If this was a reconnection, update status
-            emit('player_reconnected', {
-                'player_id': player_id,
-                'nickname': active_games[game_code]['players'][player_id]['nickname']
-            }, room=game_code)
+    # Update last activity timestamp
+    active_games[game_code]['last_activity'] = datetime.now()
 
-        emit('room_joined', {'game_code': game_code})
+    # If this is a player (not just a spectator/host)
+    if player_id and player_id in active_games[game_code]['players']:
+        player_nickname = active_games[game_code]['players'][player_id]['nickname']
+        logging.info(f'Player {player_id} ({player_nickname}) connected with socket {request.sid} in game {game_code}')
+        
+        # Track this socket for the player
+        active_games[game_code]['player_sockets'][player_id] = {
+            'socket_id': request.sid,
+            'connected': True,
+            'last_seen': datetime.now()
+        }
 
-        # Send current game state to reconnected player
-        if player_id and active_games[game_code]['phase'] != 'lobby':
-            current_question = active_games[game_code].get('current_question')
-            if current_question:
-                # Calculate remaining time if timer is active
-                remaining_time = 0
-                if 'timer_end' in active_games[game_code]:
-                    remaining_time = max(0, (active_games[game_code]['timer_end'] - datetime.now()).total_seconds())
+        # If this was a reconnection, update status and notify everyone
+        emit('player_reconnected', {
+            'player_id': player_id,
+            'nickname': player_nickname
+        }, room=game_code)
+        
+        # Send current game state to the reconnecting player
+        game_state = active_games[game_code].get('phase', 'lobby')
+        current_question = active_games[game_code].get('current_question', None)
+        
+        emit('game_state_update', {
+            'state': game_state,
+            'question': current_question,
+            'scores': {pid: p.get('score', 0) for pid, p in active_games[game_code]['players'].items()}
+        })
+        
+        # If game is in progress, send the current question
+        if game_state == 'answering' and current_question:
+            emit('new_question', current_question)
+        elif game_state == 'feedback' and 'feedback_data' in active_games[game_code]:
+            emit('answer_results', active_games[game_code]['feedback_data'])
 
-                # Send the current question to the reconnected player
-                emit('new_question', {
-                    **current_question,
-                    'timer_duration': remaining_time
-                }, room=request.sid)
+    # Confirm room join to the client that just connected
+    emit('room_joined', {'game_code': game_code})
 
 @socketio.on('start_game')
 def handle_start_game(data):
