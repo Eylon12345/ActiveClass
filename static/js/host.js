@@ -684,14 +684,20 @@ class HostGame {
         this.feedbackAttempts = 0;
 
         console.log('Broadcasting question to players:', questionData.reflective_question.substring(0, 30) + '...');
+        
+        // Ensure the question data has all needed fields in a consistent format
+        const questionToSend = {
+            reflective_question: questionData.reflective_question,
+            correct_answer: questionData.correct_answer,
+            incorrect_answers: questionData.incorrect_answers || [],
+            content_segment: questionData.content_segment || ''
+        };
+        
+        console.log('Broadcasting with data structure:', questionToSend);
+        
         this.socket.emit('broadcast_question', {
             game_code: this.gameCode,
-            question: {
-                reflective_question: questionData.reflective_question,
-                correct_answer: questionData.correct_answer,
-                incorrect_answers: questionData.incorrect_answers,
-                content_segment: questionData.content_segment
-            }
+            question: questionToSend
         });
     }
 

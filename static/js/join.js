@@ -330,6 +330,12 @@ class PlayerGame {
 
         this.socket.on('new_question', async (questionData) => {
             console.log('New question received:', questionData);
+            
+            if (!questionData) {
+                console.error('Received empty question data');
+                return;
+            }
+            
             this.hasAnswered = false;
             this.currentQuestion = questionData;
             this.phase = 'answering';
@@ -337,15 +343,13 @@ class PlayerGame {
 
             // Debug logging to see what properties are available
             console.log('Question data properties:', Object.keys(questionData));
+            console.log('Question data contents:', JSON.stringify(questionData).substring(0, 200) + '...');
             
-            // Check for question text in different possible properties
+            // Use reflective_question as the question text
             let questionText = '';
             if (questionData.reflective_question) {
                 questionText = questionData.reflective_question;
-                console.log('Using reflective_question property');
-            } else if (questionData.text) {
-                questionText = questionData.text;
-                console.log('Using text property');
+                console.log('Using reflective_question property:', questionText.substring(0, 50) + '...');
             } else {
                 console.error('Could not find question text in data:', questionData);
                 questionText = "Question text not available. Please wait for the next question.";

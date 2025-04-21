@@ -634,14 +634,23 @@ def handle_broadcast_question(data):
         # Start the timer
         start_answer_timer(game_code)
 
-        # Emit the new question with timer information
-        # Make sure the question data is passed exactly as received
-        # Logging full data for debugging
-        logging.info(f"Question data being sent: {question_data}")
-        emit('new_question', {
-            **question_data,
+        # Make sure the data format is consistent
+        # Use a standardized structure that both host and players will understand
+        logging.info(f"Original question data: {question_data}")
+        
+        # Create a normalized question data structure
+        normalized_question = {
+            'reflective_question': question_data.get('reflective_question', ''),
+            'correct_answer': question_data.get('correct_answer', ''),
+            'incorrect_answers': question_data.get('incorrect_answers', []),
+            'content_segment': question_data.get('content_segment', ''),
             'timer_duration': 60
-        }, room=game_code)
+        }
+        
+        logging.info(f"Normalized question data being sent: {normalized_question}")
+        
+        # Emit with the standardized structure
+        emit('new_question', normalized_question, room=game_code)
 
         logging.info(f"Question broadcast complete for game {game_code}")
 
