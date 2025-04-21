@@ -529,8 +529,8 @@ class HostGame {
             console.log(`Current time: ${currentTime.toFixed(2)}s, Next interval: ${nextIntervalTime}s, Time to next: ${timeToNextInterval.toFixed(2)}s, Current interval ID: ${currentIntervalId}`);
         }
 
-        // For 1-minute intervals, we want to be extra precise
-        const prefetchThreshold = this.questionInterval === 1 ? 8 : 10;
+        // Increase prefetch thresholds to start earlier and avoid delays
+        const prefetchThreshold = this.questionInterval === 1 ? 12 : 15;
 
         // Pre-fetch the question when approaching the interval point
         if (timeToNextInterval <= prefetchThreshold && timeToNextInterval > 0 && !this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
@@ -849,7 +849,9 @@ class HostGame {
         if (this.playerAnswers.size === 0) {
             console.warn('No player answers to check');
             this.continueVideo.classList.remove('hidden');
-            this.showFeedbackBtn.classList.add('hidden');
+            // Don't hide the show feedback button for cases with no answers
+            // Just disable it to indicate it's been processed
+            this.showFeedbackBtn.disabled = true;
             return;
         }
 

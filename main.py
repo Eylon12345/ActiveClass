@@ -531,8 +531,17 @@ def handle_start_game(data):
 @socketio.on('show_feedback')
 def handle_show_feedback(data):
     """Handle manual triggering of feedback stage."""
-    game_code = data['game_code']
+    game_code = data.get('game_code')
+    if not game_code:
+        logging.error("Missing game_code in show_feedback event")
+        return
+        
     if game_code in active_games:
+        # Prevent duplicate feedback
+        if active_games[game_code].get('feedback_shown', False):
+            logging.info(f"Game {game_code}: Feedback already shown, ignoring duplicate request")
+            return
+
         # Cancel timer if it exists
         if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
             active_games[game_code]['current_timer'].cancel()
@@ -549,8 +558,11 @@ def handle_show_feedback(data):
 
         # Emit feedback event with current answers to all players
         emit('show_feedback', {
-            'answers': submitted_answers
+            'answers': submitted_answers,
+            'question': active_games[game_code].get('current_question')
         }, room=game_code, broadcast=True)  # Ensure broadcast to all
+    else:
+        logging.error(f"Game {game_code} not found in active_games for show_feedback event")
 
 @socketio.on('submit_answer')
 def handle_submit_answer(data):

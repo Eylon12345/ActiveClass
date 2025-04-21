@@ -336,7 +336,8 @@ class PlayerGame {
             this.saveStateToStorage();
 
             // Store original text for translation
-            const originalText = questionData.text;
+            const originalText = questionData.reflective_question;
+            console.log('Question text:', originalText);
             this.questionText.setAttribute('data-original-text', originalText);
             this.questionText.textContent = this.isHebrewActive ?
                 await this.translateText(originalText) : originalText;
