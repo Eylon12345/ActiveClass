@@ -19,8 +19,6 @@ class HostGame {
         this.questionInterval = 2; // Default: generate questions every 2 minutes
         this.questionType = 3; // Default: balanced question type (1-5 scale)
         this.feedbackAttempts = 0; // Track feedback attempts for retry logic
-        this._feedbackTimeout = null; // Timeout for feedback
-
 
         // DOM Elements
         this.setupPhase = document.getElementById('setupPhase');
@@ -529,8 +527,8 @@ class HostGame {
             console.log(`Current time: ${currentTime.toFixed(2)}s, Next interval: ${nextIntervalTime}s, Time to next: ${timeToNextInterval.toFixed(2)}s, Current interval ID: ${currentIntervalId}`);
         }
 
-        // Increase prefetch thresholds to start earlier and avoid delays
-        const prefetchThreshold = this.questionInterval === 1 ? 12 : 15;
+        // For 1-minute intervals, we want to be extra precise
+        const prefetchThreshold = this.questionInterval === 1 ? 8 : 10;
 
         // Pre-fetch the question when approaching the interval point
         if (timeToNextInterval <= prefetchThreshold && timeToNextInterval > 0 && !this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
@@ -556,9 +554,6 @@ class HostGame {
             // Mark this interval as used
             this.usedTimestamps.add(currentIntervalId);
 
-            // Log the specific interval time for debugging
-            console.log(`Starting question process at ${currentTime.toFixed(2)}s for interval point ${nextIntervalTime}s`);
-            
             // Show the pre-fetched question
             this.showQuestion(this.nextQuestionData);
 
@@ -618,34 +613,6 @@ class HostGame {
         this.answersCount.textContent = '0';
         this.playerAnswers.clear();
 
-        // Add timer display (host only)
-        const timerDisplay = document.createElement('div');
-        timerDisplay.id = 'questionTimer';
-        timerDisplay.className = 'alert alert-info mt-3';
-        timerDisplay.textContent = 'Time remaining: 60 seconds';
-        this.questionContainer.insertBefore(timerDisplay, this.answerArea);
-
-        // Start countdown timer
-        let timeLeft = 60;
-        const timerInterval = setInterval(() => {
-            timeLeft--;
-            if (timerDisplay && document.body.contains(timerDisplay)) {
-                timerDisplay.textContent = `Time remaining: ${timeLeft} seconds`;
-                if (timeLeft <= 10) {
-                    timerDisplay.className = 'alert alert-danger mt-3';
-                }
-            } else {
-                clearInterval(timerInterval);
-            }
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                if (timerDisplay && document.body.contains(timerDisplay)) {
-                    timerDisplay.textContent = "Time's up!";
-                    this.checkAllAnswers(); //Check answers when timer runs out
-                }
-            }
-        }, 1000);
-
         const answers = [
             questionData.correct_answer,
             ...questionData.incorrect_answers
@@ -660,44 +627,31 @@ class HostGame {
             this.answerArea.appendChild(option);
         }
 
-        // Reset feedback UI
         this.showFeedbackBtn.classList.remove('hidden');
-        this.showFeedbackBtn.disabled = false;
-        this.showFeedbackBtn.textContent = 'Show Feedback';
         this.continueVideo.classList.add('hidden');
-
-        // Remove any existing bypass button
-        const existingBypassBtn = document.querySelector('.btn-warning');
-        if (existingBypassBtn) {
-            existingBypassBtn.remove();
-        }
 
         // Clear previous feedback and explanation
         this.explanationArea.classList.add('hidden');
         this.explanationArea.textContent = '';
         this.playerAnswersDisplay.innerHTML = '';
 
-        // Reset counters and state
+        // Reset answers received counters
         this.answersReceived = 0;
         this.answersCount.textContent = '0';
         this.totalPlayers.textContent = this.players.size;
+
+        // Reset feedback attempts counter
         this.feedbackAttempts = 0;
 
         console.log('Broadcasting question to players:', questionData.reflective_question.substring(0, 30) + '...');
-        
-        // Ensure the question data has all needed fields in a consistent format
-        const questionToSend = {
-            reflective_question: questionData.reflective_question,
-            correct_answer: questionData.correct_answer,
-            incorrect_answers: questionData.incorrect_answers || [],
-            content_segment: questionData.content_segment || ''
-        };
-        
-        console.log('Broadcasting with data structure:', questionToSend);
-        
         this.socket.emit('broadcast_question', {
             game_code: this.gameCode,
-            question: questionToSend
+            question: {
+                text: questionData.reflective_question,
+                correct_answer: questionData.correct_answer,
+                incorrect_answers: questionData.incorrect_answers,
+                content_segment: questionData.content_segment
+            }
         });
     }
 
@@ -708,165 +662,60 @@ class HostGame {
         this.playerAnswers.set(playerId, answer);
         this.answersReceived++;
         this.answersCount.textContent = this.answersReceived;
+
         if (this.answersReceived === this.players.size) {
             console.log('All players have answered. Checking answers...');
             this.checkAllAnswers();
         }
-
     }
 
     showFeedbackEarly() {
-        if (!this.isQuestionActive || !this.gameCode) {
-            console.warn('Cannot show feedback - game not active or no game code');
-            return;
-        }
+        if (this.isQuestionActive && this.gameCode) {
+            console.log('Requesting early feedback');
 
-        console.log('Requesting feedback with state:', {
-            isQuestionActive: this.isQuestionActive,
-            answersReceived: this.answersReceived,
-            totalPlayers: this.players.size
-        });
+            // Disable the button to prevent multiple clicks
+            this.showFeedbackBtn.disabled = true;
+            this.showFeedbackBtn.textContent = 'Processing...';
 
-        // If there are no answers, show message and enable continue
-        if (this.playerAnswers.size === 0) {
-            console.log('No answers to show feedback for');
-            this.explanationArea.textContent = 'No answers were submitted. You can continue the video.';
-            this.explanationArea.classList.remove('hidden');
-            this.continueVideo.classList.remove('hidden');
-            this.showFeedbackBtn.classList.add('hidden');
+            // Increment attempt counter
+            this.feedbackAttempts++;
 
-            // Remove any existing bypass button
-            const existingBypassBtn = document.querySelector('.btn-warning');
-            if (existingBypassBtn) {
-                existingBypassBtn.remove();
-            }
-            return;
-        }
+            // Send show_feedback event to server
+            this.socket.emit('show_feedback', { game_code: this.gameCode });
 
-        // Disable feedback button and show processing state
-        this.showFeedbackBtn.disabled = true;
-        this.showFeedbackBtn.textContent = 'Processing...';
+            // Set a timeout to re-enable the button and retry if necessary
+            setTimeout(() => {
+                // If no feedback received within 3 seconds and we haven't tried too many times
+                if (this.isQuestionActive && this.feedbackAttempts < 3) {
+                    console.log(`Feedback not received after 3 seconds, retry attempt ${this.feedbackAttempts}`);
+                    this.showFeedbackBtn.disabled = false;
+                    this.showFeedbackBtn.textContent = 'Show Feedback (Retry)';
+                } else if (this.feedbackAttempts >= 3) {
+                    // After 3 attempts, offer a more direct solution
+                    console.log('Multiple feedback attempts failed, offering bypass option');
 
-        // Send show_feedback event to server
-        this.socket.emit('show_feedback', { game_code: this.gameCode });
-
-        // Start feedback timeout handler
-        this.handleFeedbackTimeout();
-    }
-
-    handleFeedbackTimeout() {
-        // Clear any existing timeout
-        if (this._feedbackTimeout) {
-            clearTimeout(this._feedbackTimeout);
-        }
-
-        // Set new timeout for feedback
-        this._feedbackTimeout = setTimeout(() => {
-            if (!this.isQuestionActive) return;
-
-            if (this.continueVideo.classList.contains('hidden')) {
-                console.log('Feedback timed out, showing recovery options');
-
-                // Reset feedback button
-                this.showFeedbackBtn.disabled = false;
-                this.showFeedbackBtn.textContent = 'Try Feedback Again';
-
-                // Add bypass option if it doesn't exist
-                if (!document.querySelector('.btn-warning')) {
+                    // Add a bypass option
                     const bypassButton = document.createElement('button');
-                    bypassButton.className = 'btn btn-warning mt-2 ms-2';
-                    bypassButton.textContent = 'Skip & Continue';
-                    bypassButton.onclick = () => {
-                        // Clean up UI before resuming
-                        this.cleanupFeedbackUI();
-                        this.resumeVideo();
-                    };
+                    bypassButton.className = 'btn btn-warning mt-2';
+                    bypassButton.textContent = 'Skip Feedback & Continue';
+                    bypassButton.onclick = () => this.resumeVideo();
+
+                    // Add it next to the existing button
                     this.showFeedbackBtn.parentNode.appendChild(bypassButton);
+
+                    // Update the original button
+                    this.showFeedbackBtn.disabled = true;
+                    this.showFeedbackBtn.textContent = 'Feedback Failed';
                 }
-
-                // Show explanation
-                this.explanationArea.textContent = 'The feedback system is taking longer than expected. You can try again or skip and continue.';
-                this.explanationArea.classList.remove('hidden');
-            }
-        }, 5000); // 5 second timeout
-    }
-
-    cleanupFeedbackUI() {
-        // Clear any pending timeouts
-        if (this._feedbackTimeout) {
-            clearTimeout(this._feedbackTimeout);
-            this._feedbackTimeout = null;
+            }, 3000);
         }
-
-        // Remove any bypass buttons
-        const bypassBtn = document.querySelector('.btn-warning');
-        if (bypassBtn) {
-            bypassBtn.remove();
-        }
-
-        // Reset feedback button state
-        this.showFeedbackBtn.disabled = false;
-        this.showFeedbackBtn.textContent = 'Show Feedback';
-        this.showFeedbackBtn.classList.remove('hidden');
-        
-        // Clear all error and status messages
-        if (this.explanationArea.textContent.includes('taking longer than expected') || 
-            this.explanationArea.textContent.includes('No answers were submitted')) {
-            this.explanationArea.textContent = '';
-            this.explanationArea.classList.add('hidden');
-        }
-        
-        // Reset feedback attempts counter to ensure proper state for next question
-        this.feedbackAttempts = 0;
-        
-        console.log('Feedback UI reset and ready for next question');
-    }
-
-    resumeVideo() {
-        // Clear any pending feedback timeout
-        if (this._feedbackTimeout) {
-            clearTimeout(this._feedbackTimeout);
-            this._feedbackTimeout = null;
-        }
-
-        // Clean up timer
-        const timerDisplay = document.getElementById('questionTimer');
-        if (timerDisplay) {
-            timerDisplay.remove();
-        }
-
-        // Clean up UI elements
-        this.cleanupFeedbackUI();
-
-        // Reset game state
-        this.isQuestionActive = false;
-        this.answersReceived = 0;
-        this.playerAnswers.clear();
-
-        // Clear UI elements
-        this.questionContainer.classList.add('hidden');
-        this.continueVideo.classList.add('hidden');
-        this.explanationArea.classList.add('hidden');
-        this.explanationArea.textContent = '';
-        this.questionText.textContent = '';
-        this.answerArea.innerHTML = '';
-        this.playerAnswersDisplay.innerHTML = '';
-
-        // Notify server about feedback clearance
-        console.log('Emitting clear_feedback event');
-        this.socket.emit('clear_feedback', { game_code: this.gameCode });
-
-        // Resume playback
-        this.player.playVideo();
     }
 
     async checkAllAnswers() {
         if (this.playerAnswers.size === 0) {
             console.warn('No player answers to check');
             this.continueVideo.classList.remove('hidden');
-            // Don't hide the show feedback button for cases with no answers
-            // Just disable it to indicate it's been processed
-            this.showFeedbackBtn.disabled = true;
+            this.showFeedbackBtn.classList.add('hidden');
             return;
         }
 
@@ -993,40 +842,25 @@ class HostGame {
     }
 
     resumeVideo() {
-        // Clear any pending feedback timeout
-        if (this._feedbackTimeout) {
-            clearTimeout(this._feedbackTimeout);
-            this._feedbackTimeout = null;
-        }
-
-        // Clean up timer
-        const timerDisplay = document.getElementById('questionTimer');
-        if (timerDisplay) {
-            timerDisplay.remove();
-        }
-
-        // Clean up UI elements
-        this.cleanupFeedbackUI();
-
-        // Reset game state
-        this.isQuestionActive = false;
-        this.answersReceived = 0;
-        this.playerAnswers.clear();
-
-        // Clear UI elements
+        // Completely clear and hide the question UI
         this.questionContainer.classList.add('hidden');
         this.continueVideo.classList.add('hidden');
-        this.explanationArea.classList.add('hidden');
-        this.explanationArea.textContent = '';
+        this.explanationArea.classList.add('hidden');        this.explanationArea.textContent = '';
         this.questionText.textContent = '';
         this.answerArea.innerHTML = '';
         this.playerAnswersDisplay.innerHTML = '';
 
-        // Notify server about feedback clearance
+        // Reset counters and flags
+        this.isQuestionActive = false;
+        this.answersReceived = 0;
+        this.playerAnswers.clear();
+        this.feedbackAttempts = 0;
+
+        // Tell all clients that we've cleared the feedback
         console.log('Emitting clear_feedback event');
         this.socket.emit('clear_feedback', { game_code: this.gameCode });
 
-        // Resume playback
+        // Resume the video playback
         this.player.playVideo();
     }
 }

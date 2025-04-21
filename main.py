@@ -531,17 +531,8 @@ def handle_start_game(data):
 @socketio.on('show_feedback')
 def handle_show_feedback(data):
     """Handle manual triggering of feedback stage."""
-    game_code = data.get('game_code')
-    if not game_code:
-        logging.error("Missing game_code in show_feedback event")
-        return
-        
+    game_code = data['game_code']
     if game_code in active_games:
-        # Prevent duplicate feedback
-        if active_games[game_code].get('feedback_shown', False):
-            logging.info(f"Game {game_code}: Feedback already shown, ignoring duplicate request")
-            return
-
         # Cancel timer if it exists
         if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
             active_games[game_code]['current_timer'].cancel()
@@ -558,11 +549,8 @@ def handle_show_feedback(data):
 
         # Emit feedback event with current answers to all players
         emit('show_feedback', {
-            'answers': submitted_answers,
-            'question': active_games[game_code].get('current_question')
+            'answers': submitted_answers
         }, room=game_code, broadcast=True)  # Ensure broadcast to all
-    else:
-        logging.error(f"Game {game_code} not found in active_games for show_feedback event")
 
 @socketio.on('submit_answer')
 def handle_submit_answer(data):
@@ -634,23 +622,11 @@ def handle_broadcast_question(data):
         # Start the timer
         start_answer_timer(game_code)
 
-        # Make sure the data format is consistent
-        # Use a standardized structure that both host and players will understand
-        logging.info(f"Original question data: {question_data}")
-        
-        # Create a normalized question data structure
-        normalized_question = {
-            'reflective_question': question_data.get('reflective_question', ''),
-            'correct_answer': question_data.get('correct_answer', ''),
-            'incorrect_answers': question_data.get('incorrect_answers', []),
-            'content_segment': question_data.get('content_segment', ''),
+        # Emit the new question with timer information
+        emit('new_question', {
+            **question_data,
             'timer_duration': 60
-        }
-        
-        logging.info(f"Normalized question data being sent: {normalized_question}")
-        
-        # Emit with the standardized structure
-        emit('new_question', normalized_question, room=game_code)
+        }, room=game_code)
 
         logging.info(f"Question broadcast complete for game {game_code}")
 
@@ -674,34 +650,17 @@ def handle_answer_result(data):
 @socketio.on('clear_feedback')
 def handle_clear_feedback(data):
     """Handle clearing of feedback when host continues the video."""
-    game_code = data.get('game_code')
-    if not game_code:
-        logging.error("Missing game_code in clear_feedback event")
-        return
-        
+    game_code = data['game_code']
     if game_code in active_games:
         # Reset the feedback flag
         active_games[game_code]['feedback_shown'] = False
         active_games[game_code]['phase'] = 'playing'
         active_games[game_code]['current_question'] = None
-        
-        # Clear submitted answers to prevent old answers from affecting new questions
-        if 'submitted_answers' in active_games[game_code]:
-            active_games[game_code]['submitted_answers'] = []
-        
-        # Cancel any pending timers
-        if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
-            active_games[game_code]['current_timer'].cancel()
-            active_games[game_code]['current_timer'] = None
-            
-        # Update last activity timestamp
-        active_games[game_code]['last_activity'] = datetime.now()
+        active_games[game_code]['submitted_answers'] = []
 
         # Notify all players that feedback has been cleared
         logging.info(f"Game {game_code}: Clearing feedback state")
         emit('feedback_cleared', {}, room=game_code)
-    else:
-        logging.error(f"Game {game_code} not found in active_games for clear_feedback event")
 
 # Clean up disconnected games periodically
 def cleanup_inactive_games():

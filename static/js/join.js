@@ -330,75 +330,37 @@ class PlayerGame {
 
         this.socket.on('new_question', async (questionData) => {
             console.log('New question received:', questionData);
-            
-            if (!questionData) {
-                console.error('Received empty question data');
-                return;
-            }
-            
             this.hasAnswered = false;
             this.currentQuestion = questionData;
             this.phase = 'answering';
             this.saveStateToStorage();
 
-            // Debug logging to see what properties are available
-            console.log('Question data properties:', Object.keys(questionData));
-            console.log('Question data contents:', JSON.stringify(questionData).substring(0, 200) + '...');
-            
-            // Use reflective_question as the question text
-            let questionText = '';
-            if (questionData.reflective_question) {
-                questionText = questionData.reflective_question;
-                console.log('Using reflective_question property:', questionText.substring(0, 50) + '...');
-            } else {
-                console.error('Could not find question text in data:', questionData);
-                questionText = "Question text not available. Please wait for the next question.";
-            }
-            
-            console.log('Final question text:', questionText);
-            
             // Store original text for translation
-            this.questionText.setAttribute('data-original-text', questionText);
+            const originalText = questionData.text;
+            this.questionText.setAttribute('data-original-text', originalText);
             this.questionText.textContent = this.isHebrewActive ?
-                await this.translateText(questionText) : questionText;
+                await this.translateText(originalText) : originalText;
 
             this.answerArea.innerHTML = '';
             this.feedback.classList.add('hidden');
 
-            // Similar defense for answer options
-            let correctAnswer = questionData.correct_answer;
-            let incorrectAnswers = questionData.incorrect_answers || [];
-            
-            console.log('Answers available:', correctAnswer ? 'Yes' : 'No', 
-                        'Incorrect answers:', incorrectAnswers.length);
-            
-            // Only proceed with answers if we have them
-            if (correctAnswer && incorrectAnswers && incorrectAnswers.length > 0) {
-                const answers = [
-                    correctAnswer,
-                    ...incorrectAnswers
-                ].sort(() => Math.random() - 0.5);
+            const answers = [
+                questionData.correct_answer,
+                ...questionData.incorrect_answers
+            ].sort(() => Math.random() - 0.5);
 
-                for (const answer of answers) {
-                    const option = document.createElement('div');
-                    option.className = 'answer-option';
-                    option.setAttribute('data-original-text', answer);
-                    option.textContent = this.isHebrewActive ?
-                        await this.translateText(answer) : answer;
-                    option.addEventListener('click', () => {
-                        if (!this.hasAnswered) {
-                            this.submitAnswer(answer);
-                        }
-                    });
-                    this.answerArea.appendChild(option);
-                }
-            } else {
-                console.error('Missing answer options in question data');
-                // Display a message for the user
-                const errorMsg = document.createElement('div');
-                errorMsg.className = 'alert alert-warning';
-                errorMsg.textContent = 'Answer options not available. Please wait for the next question.';
-                this.answerArea.appendChild(errorMsg);
+            for (const answer of answers) {
+                const option = document.createElement('div');
+                option.className = 'answer-option';
+                option.setAttribute('data-original-text', answer);
+                option.textContent = this.isHebrewActive ?
+                    await this.translateText(answer) : answer;
+                option.addEventListener('click', () => {
+                    if (!this.hasAnswered) {
+                        this.submitAnswer(answer);
+                    }
+                });
+                this.answerArea.appendChild(option);
             }
 
             // Show the game phase if not already visible
