@@ -635,6 +635,9 @@ def handle_broadcast_question(data):
         start_answer_timer(game_code)
 
         # Emit the new question with timer information
+        # Make sure the question data is passed exactly as received
+        # Logging full data for debugging
+        logging.info(f"Question data being sent: {question_data}")
         emit('new_question', {
             **question_data,
             'timer_duration': 60
