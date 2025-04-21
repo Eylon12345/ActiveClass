@@ -434,16 +434,34 @@ def translate_text():
 def start_answer_timer(game_code):
     """Start a timer for the current question. After 60 seconds, trigger feedback."""
     def timer_callback():
-        if game_code in active_games and active_games[game_code]['phase'] == 'answering':
-            handle_show_feedback({'game_code': game_code})
+        try:
+            if game_code in active_games and active_games[game_code]['phase'] == 'answering':
+                logging.info(f"Timer expired for game {game_code}. Automatically showing feedback.")
+                handle_show_feedback({'game_code': game_code})
+            else:
+                logging.info(f"Timer expired for game {game_code}, but game is no longer in answering phase.")
+        except Exception as e:
+            logging.error(f"Error in timer callback for game {game_code}: {str(e)}")
 
-    # Store the timer in the game state so we can cancel it if needed
+    # Cancel any existing timer first to prevent overlaps
+    if game_code in active_games and 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
+        try:
+            active_games[game_code]['current_timer'].cancel()
+            logging.info(f"Cancelled existing timer for game {game_code}")
+        except:
+            logging.warning(f"Failed to cancel existing timer for game {game_code}")
+
+    # Create and store the new timer
     timer = threading.Timer(60.0, timer_callback)
+    timer.daemon = True  # Make timer a daemon thread so it doesn't block program exit
     timer.start()
 
     # Store timer and end time in game state
     active_games[game_code]['current_timer'] = timer
     active_games[game_code]['timer_end'] = datetime.now() + timedelta(seconds=60)
+    active_games[game_code]['answers_timer_started'] = True
+    
+    logging.info(f"Started 60-second answer timer for game {game_code}")
 
 @socketio.on('connect')
 def handle_connect():
@@ -536,26 +554,64 @@ def handle_start_game(data):
 @socketio.on('show_feedback')
 def handle_show_feedback(data):
     """Handle manual triggering of feedback stage."""
-    game_code = data['game_code']
-    if game_code in active_games:
+    try:
+        game_code = data['game_code']
+        if game_code not in active_games:
+            logging.warning(f"Show feedback called for non-existent game: {game_code}")
+            return
+
+        # Make sure we don't process feedback twice
+        if active_games[game_code].get('feedback_shown', False) and active_games[game_code]['phase'] == 'feedback':
+            logging.info(f"Game {game_code}: Feedback already shown, ignoring duplicate request")
+            return
+            
+        logging.info(f"Game {game_code}: Processing feedback request")
+        
         # Cancel timer if it exists
         if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
-            active_games[game_code]['current_timer'].cancel()
+            try:
+                active_games[game_code]['current_timer'].cancel()
+                logging.info(f"Game {game_code}: Cancelled answer timer")
+            except:
+                logging.warning(f"Game {game_code}: Failed to cancel timer")
             active_games[game_code]['current_timer'] = None
 
         # Change phase to feedback and set feedback flag
         active_games[game_code]['phase'] = 'feedback'
-        active_games[game_code]['feedback_shown'] = True  # Set feedback flag
-
-        # Get all submitted answers
-        submitted_answers = active_games[game_code].get('submitted_answers', [])
-
-        logging.info(f"Game {game_code}: Showing feedback for {len(submitted_answers)} answers")
-
+        active_games[game_code]['feedback_shown'] = True
+        
+        # Prepare the answers - ensure we have a valid list even if none were submitted
+        if 'submitted_answers' not in active_games[game_code]:
+            active_games[game_code]['submitted_answers'] = []
+            
+        submitted_answers = active_games[game_code]['submitted_answers']
+        
+        # Log details for debugging
+        player_count = len(active_games[game_code]['players'])
+        answer_count = len(submitted_answers)
+        logging.info(f"Game {game_code}: Showing feedback for {answer_count}/{player_count} players who submitted answers")
+        
+        # Create a detailed log of which players submitted answers
+        if answer_count > 0:
+            player_names = [ans['nickname'] for ans in submitted_answers]
+            logging.info(f"Game {game_code}: Answers from: {', '.join(player_names)}")
+        
         # Emit feedback event with current answers to all players
+        # Using broadcast=True to ensure all connected clients receive it
         emit('show_feedback', {
             'answers': submitted_answers
-        }, room=game_code, broadcast=True)  # Ensure broadcast to all
+        }, room=game_code, broadcast=True)
+        
+        logging.info(f"Game {game_code}: Feedback show event emitted successfully")
+    except Exception as e:
+        logging.error(f"Error handling show_feedback: {str(e)}")
+        # Try to recover if possible by sending a basic response
+        try:
+            if 'game_code' in data and data['game_code'] in active_games:
+                emit('show_feedback', {'answers': []}, room=data['game_code'])
+                logging.info(f"Sent recovery feedback response to game {data['game_code']}")
+        except:
+            logging.error("Failed to send recovery feedback response")
 
 @socketio.on('submit_answer')
 def handle_submit_answer(data):
@@ -655,17 +711,47 @@ def handle_answer_result(data):
 @socketio.on('clear_feedback')
 def handle_clear_feedback(data):
     """Handle clearing of feedback when host continues the video."""
-    game_code = data['game_code']
-    if game_code in active_games:
-        # Reset the feedback flag
+    try:
+        game_code = data['game_code']
+        if game_code not in active_games:
+            logging.warning(f"Clear feedback called for non-existent game: {game_code}")
+            return
+            
+        logging.info(f"Game {game_code}: Processing clear feedback request")
+        
+        # Reset all question and feedback-related state
         active_games[game_code]['feedback_shown'] = False
         active_games[game_code]['phase'] = 'playing'
         active_games[game_code]['current_question'] = None
+        
+        # Ensure submitted_answers exists and is empty
         active_games[game_code]['submitted_answers'] = []
+        
+        # Cancel any lingering timers
+        if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
+            try:
+                active_games[game_code]['current_timer'].cancel()
+            except:
+                pass
+            active_games[game_code]['current_timer'] = None
+        
+        # Update activity timestamp
+        active_games[game_code]['last_activity'] = datetime.now()
 
         # Notify all players that feedback has been cleared
         logging.info(f"Game {game_code}: Clearing feedback state")
-        emit('feedback_cleared', {}, room=game_code)
+        emit('feedback_cleared', {}, room=game_code, broadcast=True)
+        
+        logging.info(f"Game {game_code}: Feedback cleared successfully")
+    except Exception as e:
+        logging.error(f"Error handling clear_feedback: {str(e)}")
+        # Try to recover if possible
+        try:
+            if 'game_code' in data and data['game_code'] in active_games:
+                emit('feedback_cleared', {}, room=data['game_code'])
+                logging.info(f"Sent recovery feedback clear to game {data['game_code']}")
+        except:
+            logging.error("Failed to send recovery feedback clear message")
 
 # Clean up disconnected games periodically
 def cleanup_inactive_games():

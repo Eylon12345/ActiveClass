@@ -105,9 +105,13 @@
 
         <!-- Game Phase -->
         <div id="gamePhase" class="hidden">
-            <!-- Video Container -->
-            <div class="video-container mb-4">
+            <!-- Video Container with Timer -->
+            <div class="video-container mb-4 position-relative">
                 <div id="player"></div>
+                <!-- Host Timer Display -->
+                <div id="hostTimerDisplay" class="position-absolute top-0 end-0 bg-primary text-white px-3 py-2 m-2 rounded-pill fs-5 fw-bold shadow" style="z-index: 100; display: none;">
+                    0:00
+                </div>
             </div>
 
             <!-- Question Container -->

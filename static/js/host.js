@@ -298,12 +298,32 @@ class HostGame {
 
         this.socket.on('show_feedback', (data) => {
             console.log('Received show_feedback event:', data);
+            
+            // Clear any pending feedback timeout to avoid duplicate processing
+            if (this.feedbackTimeout) {
+                clearTimeout(this.feedbackTimeout);
+                this.feedbackTimeout = null;
+            }
+            
+            // Remove any emergency bypass options that might be displayed
+            const bypassContainer = document.getElementById('bypassFeedbackContainer');
+            if (bypassContainer) {
+                bypassContainer.remove();
+            }
+            
+            // Process the feedback
+            this.feedbackAttempts = 0; // Reset counter
+            
             if (data.answers && data.answers.length > 0) {
-                // Reset the feedback attempts counter
-                this.feedbackAttempts = 0;
+                console.log(`Processing feedback with ${data.answers.length} answers`);
                 this.checkAllAnswers();
             } else {
                 console.warn('Received empty answers in show_feedback event');
+                // Even with no answers, we should still show the continue button
+                this.continueVideo.classList.remove('hidden');
+                this.showFeedbackBtn.classList.add('hidden');
+                this.explanationArea.textContent = "No answers were submitted for this question.";
+                this.explanationArea.classList.remove('hidden');
             }
         });
 
@@ -706,35 +726,85 @@ class HostGame {
 
             // Increment attempt counter
             this.feedbackAttempts++;
+            
+            // Ensure parent container has the right layout
+            const buttonContainer = this.showFeedbackBtn.parentNode;
+            
+            // Clear any existing bypass buttons to avoid duplicates
+            const existingBypassButton = document.getElementById('bypassFeedbackButton');
+            if (existingBypassButton) {
+                existingBypassButton.remove();
+            }
 
+            // Add a visual indicator of the attempt
+            console.log(`Feedback attempt ${this.feedbackAttempts}`);
+            
             // Send show_feedback event to server
             this.socket.emit('show_feedback', { game_code: this.gameCode });
 
-            // Set a timeout to re-enable the button and retry if necessary
-            setTimeout(() => {
-                // If no feedback received within 3 seconds and we haven't tried too many times
+            // Set a timeout to handle potential failures
+            const timeoutDuration = 3000; // 3 seconds
+            const feedbackTimeout = setTimeout(() => {
+                // If still in question phase (no feedback received) and haven't tried too many times
                 if (this.isQuestionActive && this.feedbackAttempts < 3) {
-                    console.log(`Feedback not received after 3 seconds, retry attempt ${this.feedbackAttempts}`);
+                    console.log(`Feedback not received after ${timeoutDuration/1000}s, retry attempt ${this.feedbackAttempts}`);
                     this.showFeedbackBtn.disabled = false;
-                    this.showFeedbackBtn.textContent = 'Show Feedback (Retry)';
+                    this.showFeedbackBtn.textContent = `Show Feedback (Retry ${this.feedbackAttempts})`;
                 } else if (this.feedbackAttempts >= 3) {
-                    // After 3 attempts, offer a more direct solution
-                    console.log('Multiple feedback attempts failed, offering bypass option');
+                    // After 3 attempts, offer a more robust solution
+                    console.log('Multiple feedback attempts failed, offering emergency options');
 
-                    // Add a bypass option
+                    // Create a bypass container with multiple recovery options
+                    const bypassContainer = document.createElement('div');
+                    bypassContainer.className = 'mt-3 d-flex flex-column gap-2';
+                    bypassContainer.id = 'bypassFeedbackContainer';
+                    
+                    // Option 1: Skip and continue without feedback
                     const bypassButton = document.createElement('button');
-                    bypassButton.className = 'btn btn-warning mt-2';
-                    bypassButton.textContent = 'Skip Feedback & Continue';
+                    bypassButton.id = 'bypassFeedbackButton';
+                    bypassButton.className = 'btn btn-warning';
+                    bypassButton.textContent = 'Skip Feedback & Continue Video';
                     bypassButton.onclick = () => this.resumeVideo();
-
-                    // Add it next to the existing button
-                    this.showFeedbackBtn.parentNode.appendChild(bypassButton);
+                    
+                    // Option 2: Force check answers on client-side only
+                    const forceCheckButton = document.createElement('button');
+                    forceCheckButton.className = 'btn btn-info';
+                    forceCheckButton.textContent = 'Force Check Answers';
+                    forceCheckButton.onclick = () => {
+                        // Do a client-side only check of answers
+                        this.checkAllAnswers();
+                        bypassContainer.remove(); // Remove the container after use
+                    };
+                    
+                    // Option 3: Reset everything and get a new question
+                    const resetButton = document.createElement('button');
+                    resetButton.className = 'btn btn-danger';
+                    resetButton.textContent = 'Reset & Continue (Last Resort)';
+                    resetButton.onclick = () => {
+                        // Force reset game state and continue
+                        this.socket.emit('clear_feedback', { game_code: this.gameCode });
+                        this.resumeVideo();
+                        bypassContainer.remove(); // Remove the container after use
+                    };
+                    
+                    // Add buttons to container
+                    bypassContainer.appendChild(bypassButton);
+                    bypassContainer.appendChild(forceCheckButton);
+                    bypassContainer.appendChild(resetButton);
+                    
+                    // Add recovery options container to the button area
+                    buttonContainer.appendChild(bypassContainer);
 
                     // Update the original button
                     this.showFeedbackBtn.disabled = true;
-                    this.showFeedbackBtn.textContent = 'Feedback Failed';
+                    this.showFeedbackBtn.textContent = 'Feedback System Error';
+                    this.showFeedbackBtn.classList.remove('btn-warning');
+                    this.showFeedbackBtn.classList.add('btn-danger');
                 }
-            }, 3000);
+            }, timeoutDuration);
+            
+            // Store the timeout so we can clear it if feedback is received
+            this.feedbackTimeout = feedbackTimeout;
         }
     }
 
