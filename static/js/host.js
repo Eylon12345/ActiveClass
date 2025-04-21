@@ -556,6 +556,9 @@ class HostGame {
             // Mark this interval as used
             this.usedTimestamps.add(currentIntervalId);
 
+            // Log the specific interval time for debugging
+            console.log(`Starting question process at ${currentTime.toFixed(2)}s for interval point ${nextIntervalTime}s`);
+            
             // Show the pre-fetched question
             this.showQuestion(this.nextQuestionData);
 
@@ -684,7 +687,7 @@ class HostGame {
         this.socket.emit('broadcast_question', {
             game_code: this.gameCode,
             question: {
-                text: questionData.reflective_question,
+                reflective_question: questionData.reflective_question,
                 correct_answer: questionData.correct_answer,
                 incorrect_answers: questionData.incorrect_answers,
                 content_segment: questionData.content_segment
@@ -799,12 +802,18 @@ class HostGame {
         this.showFeedbackBtn.disabled = false;
         this.showFeedbackBtn.textContent = 'Show Feedback';
         this.showFeedbackBtn.classList.remove('hidden');
-
-        // Clear error messages
-        if (this.explanationArea.textContent.includes('taking longer than expected')) {
+        
+        // Clear all error and status messages
+        if (this.explanationArea.textContent.includes('taking longer than expected') || 
+            this.explanationArea.textContent.includes('No answers were submitted')) {
             this.explanationArea.textContent = '';
             this.explanationArea.classList.add('hidden');
         }
+        
+        // Reset feedback attempts counter to ensure proper state for next question
+        this.feedbackAttempts = 0;
+        
+        console.log('Feedback UI reset and ready for next question');
     }
 
     resumeVideo() {

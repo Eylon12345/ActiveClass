@@ -662,17 +662,34 @@ def handle_answer_result(data):
 @socketio.on('clear_feedback')
 def handle_clear_feedback(data):
     """Handle clearing of feedback when host continues the video."""
-    game_code = data['game_code']
+    game_code = data.get('game_code')
+    if not game_code:
+        logging.error("Missing game_code in clear_feedback event")
+        return
+        
     if game_code in active_games:
         # Reset the feedback flag
         active_games[game_code]['feedback_shown'] = False
         active_games[game_code]['phase'] = 'playing'
         active_games[game_code]['current_question'] = None
-        active_games[game_code]['submitted_answers'] = []
+        
+        # Clear submitted answers to prevent old answers from affecting new questions
+        if 'submitted_answers' in active_games[game_code]:
+            active_games[game_code]['submitted_answers'] = []
+        
+        # Cancel any pending timers
+        if 'current_timer' in active_games[game_code] and active_games[game_code]['current_timer']:
+            active_games[game_code]['current_timer'].cancel()
+            active_games[game_code]['current_timer'] = None
+            
+        # Update last activity timestamp
+        active_games[game_code]['last_activity'] = datetime.now()
 
         # Notify all players that feedback has been cleared
         logging.info(f"Game {game_code}: Clearing feedback state")
         emit('feedback_cleared', {}, room=game_code)
+    else:
+        logging.error(f"Game {game_code} not found in active_games for clear_feedback event")
 
 # Clean up disconnected games periodically
 def cleanup_inactive_games():
