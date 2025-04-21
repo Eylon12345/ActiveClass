@@ -513,26 +513,45 @@ class HostGame {
         // Calculate interval boundaries based on the chosen question interval (in minutes)
         const intervalInSeconds = this.questionInterval * 60;
 
-        // Calculate the exact time of the next interval point
+        // For exact minute stops, we need to:
+        // 1. Find the exact minute markers (60s, 120s, 180s, etc.)
+        // 2. Stop precisely at those points
+        
+        // First, find the closest upcoming minute marker
         const nextIntervalTime = Math.ceil(currentTime / intervalInSeconds) * intervalInSeconds;
-
-        // Time to the next interval point (in seconds)
+        
+        // Time until we reach the next interval marker (in seconds)
         const timeToNextInterval = nextIntervalTime - currentTime;
-
-        // Calculate current interval ID to track used intervals
+        
+        // Calculate current interval ID to track used intervals (to avoid showing questions multiple times)
         const currentIntervalId = Math.floor(currentTime / intervalInSeconds);
 
-        // Log detailed timing information for debugging
+        // Update the timer display for the host (only if we have a timer container)
+        const timerDisplay = document.getElementById('hostTimerDisplay');
+        if (timerDisplay) {
+            // Show time to next question (only show if we're not too close to avoid flashing)
+            if (timeToNextInterval > 1) {
+                const minutes = Math.floor(timeToNextInterval / 60);
+                const seconds = Math.floor(timeToNextInterval % 60);
+                timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                timerDisplay.style.display = 'block';
+            } else {
+                timerDisplay.style.display = 'none';
+            }
+        }
+
+        // Log detailed timing information for debugging (less frequently to avoid console spam)
         if (currentTime % 5 < 0.25) { // Log every ~5 seconds
             console.log(`Current time: ${currentTime.toFixed(2)}s, Next interval: ${nextIntervalTime}s, Time to next: ${timeToNextInterval.toFixed(2)}s, Current interval ID: ${currentIntervalId}`);
         }
 
-        // For 1-minute intervals, we want to be extra precise
-        const prefetchThreshold = this.questionInterval === 1 ? 8 : 10;
+        // Pre-fetch threshold - for 1-minute intervals we need to be more aggressive with pre-fetching
+        // to ensure we have the question ready exactly at the minute mark
+        const prefetchThreshold = this.questionInterval === 1 ? 15 : 10;
 
         // Pre-fetch the question when approaching the interval point
-        if (timeToNextInterval <= prefetchThreshold && timeToNextInterval > 0 && !this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
-            console.log(`Pre-fetching question for interval ${currentIntervalId} at time ${currentTime.toFixed(2)}, ${timeToNextInterval.toFixed(2)}s before interval point`);
+        if (timeToNextInterval <= prefetchThreshold && timeToNextInterval > 1 && !this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
+            console.log(`Pre-fetching question for interval ${currentIntervalId} at time ${currentTime.toFixed(2)}s, ${timeToNextInterval.toFixed(2)}s before interval point`);
 
             // Use the current interval's content as the source material
             const contentStartTime = Math.max(0, nextIntervalTime - intervalInSeconds);
@@ -546,19 +565,27 @@ class HostGame {
             }
         }
 
-        // Show question when we hit or pass the interval point (with a small buffer for timing precision)
-        const bufferTime = 0.5; // Half-second buffer
-        if (timeToNextInterval <= bufferTime && currentTime >= (nextIntervalTime - bufferTime) && this.nextQuestionData && !this.usedTimestamps.has(currentIntervalId)) {
+        // Especially for 1-minute intervals, we need a very precise buffer
+        // For 1-minute intervals: 0.3s buffer, for others: 0.5s buffer
+        const bufferTime = this.questionInterval === 1 ? 0.3 : 0.5;
+        
+        // Show question exactly at the minute mark (or within the buffer)
+        // The key change is making sure we're very close to the exact minute mark
+        if (timeToNextInterval <= bufferTime && 
+            Math.abs(currentTime - nextIntervalTime) < bufferTime && 
+            this.nextQuestionData && 
+            !this.usedTimestamps.has(currentIntervalId)) {
+            
             console.log(`Showing question at interval point ${nextIntervalTime}s (current time: ${currentTime.toFixed(2)}s)`);
 
-            // Mark this interval as used
+            // Mark this interval as used immediately
             this.usedTimestamps.add(currentIntervalId);
+
+            // Pause the video first before showing the question to ensure we stop at the right spot
+            this.player.pauseVideo();
 
             // Show the pre-fetched question
             this.showQuestion(this.nextQuestionData);
-
-            // Pause the video
-            this.player.pauseVideo();
 
             // Record this time and reset question data
             this.lastQuestionTime = currentTime;

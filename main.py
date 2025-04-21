@@ -2,7 +2,7 @@ import eventlet
 eventlet.monkey_patch()
 
 import os
-import requests  # Add requests library for making HTTP requests to Supadata API
+import requests
 
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
@@ -11,7 +11,6 @@ import logging
 from pydantic import BaseModel
 from typing import List
 from dotenv import load_dotenv
-from youtube_transcript_api import YouTubeTranscriptApi
 import re
 import random
 import string
@@ -24,6 +23,12 @@ import base64
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
+
+# Initialize OpenAI client
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+if not openai_api_key:
+    logging.warning("OPENAI_API_KEY not found in environment variables")
+client = OpenAI(api_key=openai_api_key)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
