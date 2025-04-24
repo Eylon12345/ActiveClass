@@ -289,7 +289,7 @@ def join_game():
         socketio.emit('player_joined', {
             'nickname': nickname,
             'player_id': player_id
-        }, room=game_code, broadcast=True)
+        }, room=game_code)
 
         return jsonify({
             "success": True,
@@ -647,10 +647,9 @@ def handle_show_feedback(data):
             logging.info(f"Game {game_code}: Answers from: {', '.join(player_names)}")
         
         # Emit feedback event with current answers to all players
-        # Using broadcast=True to ensure all connected clients receive it
         emit('show_feedback', {
             'answers': submitted_answers
-        }, room=game_code, broadcast=True)
+        }, room=game_code)
         
         logging.info(f"Game {game_code}: Feedback show event emitted successfully")
     except Exception as e:
@@ -790,7 +789,7 @@ def handle_clear_feedback(data):
 
         # Notify all players that feedback has been cleared
         logging.info(f"Game {game_code}: Clearing feedback state")
-        emit('feedback_cleared', {}, room=game_code, broadcast=True)
+        emit('feedback_cleared', {}, room=game_code)
         
         logging.info(f"Game {game_code}: Feedback cleared successfully")
     except Exception as e:
